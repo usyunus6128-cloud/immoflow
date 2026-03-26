@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Neue Immobilie anlegen</h1>
+    </div>
+    <a href="/" class="button secondary">Zurück</a>
+</div>
+
+<div class="card narrow">
+    <form method="post" action="/buildings">
+        <label for="name">Objektname</label>
+        <input id="name" type="text" name="name" required>
+
+        <label for="address">Adresse / Straße</label>
+        <input id="address" type="text" name="address" required>
+
+        <label for="landlord_name">Vermieter</label>
+        <input id="landlord_name" type="text" name="landlord_name">
+
+        <label for="tenant_name">Mieter</label>
+        <input id="tenant_name" type="text" name="tenant_name">
+
+        <button type="submit" class="button">Immobilie speichern</button>
+    </form>
+</div>
+{% endblock %}

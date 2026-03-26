@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>{{ building.name }}</h1>
+        <p>{{ building.address }}</p>
+        {% if building.landlord_name %}
+            <p>Vermieter: {{ building.landlord_name }}</p>
+        {% endif %}
+        {% if building.tenant_name %}
+            <p>Mieter: {{ building.tenant_name }}</p>
+        {% endif %}
+    </div>
+    <a href="/" class="button secondary">Zurück</a>
+</div>
+
+<div class="detail-grid">
+    <div class="card">
+        <h2>Dokument hochladen</h2>
+
+        <form method="post" action="/documents/upload" enctype="multipart/form-data">
+            <input type="hidden" name="building_id" value="{{ building.id }}">
+
+            <label for="category">Kategorie</label>
+            <select id="category" name="category" required>
+                <option value="Rechnung">Rechnung</option>
+                <option value="Vertrag">Vertrag</option>
+                <option value="Sonstiges">Sonstiges</option>
+            </select>
+
+            <label for="file">Datei</label>
+            <input id="file" type="file" name="file" required>
+
+            <button type="submit" class="button">Dokument hochladen</button>
+        </form>
+
+        <hr>
+
+        <h2>Dokumente</h2>
+
+        {% if building.documents %}
+            <ul class="list">
+                {% for document in building.documents %}
+                    <li class="list-item">
+                        <div>
+                            <strong>{{ document.original_filename }}</strong><br>
+                            <span>{{ document.category }}</span>
+                        </div>
+                        <div class="action-group">
+                            <a href="/documents/{{ document.id }}/download" class="button small secondary">Download</a>
+                            <form method="post" action="/documents/{{ document.id }}/delete">
+                                <input type="hidden" name="building_id" value="{{ building.id }}">
+                                <button type="submit" class="button small danger">Löschen</button>
+                            </form>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>Noch keine Dokumente vorhanden.</p>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <h2>Aufgabe anlegen</h2>
+
+        <form method="post" action="/tasks">
+            <input type="hidden" name="building_id" value="{{ building.id }}">
+
+            <label for="title">Titel</label>
+            <input id="title" type="text" name="title" required>
+
+            <label for="note">Notiz</label>
+            <textarea id="note" name="note" rows="4" placeholder="Was genau ist zu tun?"></textarea>
+
+            <label for="due_date">Fälligkeitsdatum</label>
+            <input id="due_date" type="date" name="due_date">
+
+            <button type="submit" class="button">Aufgabe speichern</button>
+        </form>
+
+        <hr>
+
+        <h2>Offene Aufgaben</h2>
+        {% if open_tasks %}
+            <ul class="list">
+                {% for task in open_tasks %}
+                    <li class="task-item vertical-item">
+                        <div>
+                            <strong>{{ task.title }}</strong><br>
+                            {% if task.note %}
+                                <span>Notiz: {{ task.note }}</span><br>
+                            {% endif %}
+                            <span>
+                                {% if task.due_date %}
+                                    Fällig: {{ task.due_date }}
+                                {% else %}
+                                    Kein Fälligkeitsdatum
+                                {% endif %}
+                            </span>
+                        </div>
+
+                        <div class="action-group">
+                            <form method="post" action="/tasks/{{ task.id }}/done">
+                                <input type="hidden" name="building_id" value="{{ building.id }}">
+                                <button type="submit" class="button small success">Erledigt</button>
+                            </form>
+
+                            <form method="post" action="/tasks/{{ task.id }}/delete">
+                                <input type="hidden" name="building_id" value="{{ building.id }}">
+                                <button type="submit" class="button small danger">Löschen</button>
+                            </form>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>Keine offenen Aufgaben.</p>
+        {% endif %}
+
+        <hr>
+
+        <h2>Erledigte Aufgaben</h2>
+        {% if done_tasks %}
+            <ul class="list">
+                {% for task in done_tasks %}
+                    <li class="list-item">
+                        <div>
+                            <strong>{{ task.title }}</strong><br>
+                            {% if task.note %}
+                                <span>Notiz: {{ task.note }}</span><br>
+                            {% endif %}
+                            <span>Status: erledigt</span>
+                        </div>
+
+                        <form method="post" action="/tasks/{{ task.id }}/delete">
+                            <input type="hidden" name="building_id" value="{{ building.id }}">
+                            <button type="submit" class="button small danger">Löschen</button>
+                        </form>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>Noch keine erledigten Aufgaben.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
