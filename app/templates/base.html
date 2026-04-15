@@ -3,24 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ImmoFlow</title>
+    <title>Immocontrol</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <header class="topbar">
-        <div class="container topbar-inner">
-            <a href="/" class="logo">ImmoFlow</a>
-            {% if user %}
+
+<div class="app-layout">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            Immocontrol
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="/" class="nav-item">Dashboard</a>
+            <a href="/" class="nav-item">Immobilien</a>
+        </nav>
+    </aside>
+
+    <!-- Main -->
+    <div class="main-area">
+
+        <!-- Topbar -->
+        <header class="topbar">
+            <div class="topbar-inner">
+                <div></div>
+                {% if user %}
                 <div class="topbar-actions">
-                    <span class="user-badge">Eingeloggt als: {{ user.username }}</span>
+                    <span class="user-badge">{{ user.username }}</span>
                     <a href="/logout" class="button small secondary">Logout</a>
                 </div>
-            {% endif %}
-        </div>
-    </header>
+                {% endif %}
+            </div>
+        </header>
 
-    <main class="container">
-        {% block content %}{% endblock %}
-    </main>
+        <!-- Content -->
+        <main class="content">
+            {% block content %}{% endblock %}
+        </main>
+
+    </div>
+
+</div>
+
 </body>
 </html>
