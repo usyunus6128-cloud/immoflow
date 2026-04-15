@@ -1,8 +1,11 @@
-{% extends "base.html" %}
+{% extends "auth_base.html" %}
 
 {% block content %}
-<div class="card narrow auth-card">
-    <h1>Login</h1>
+<div class="card auth-card-large">
+    <div class="auth-header">
+        <h1>Willkommen zurück</h1>
+        <p>Melde dich bei ImmoControl an und verwalte deine Immobilien, Dokumente und Aufgaben an einem Ort.</p>
+    </div>
 
     {% if error %}
         <p class="error-text">{{ error }}</p>
@@ -15,9 +18,12 @@
         <label for="password">Passwort</label>
         <input id="password" type="password" name="password" required>
 
-        <button type="submit" class="button">Einloggen</button>
+        <button type="submit" class="button auth-button">Einloggen</button>
     </form>
 
-    <p class="top-space-small">Noch kein Konto? <a href="/register">Registrieren</a></p>
+    <p class="auth-switch">
+        Noch kein Konto?
+        <a href="/register">Jetzt registrieren</a>
+    </p>
 </div>
 {% endblock %}

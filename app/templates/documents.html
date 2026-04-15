@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Dokumente</h1>
+        <p>Alle hochgeladenen Dokumente im Überblick</p>
+    </div>
+</div>
+
+<div class="card">
+    {% if documents %}
+        <div class="building-list">
+            {% for item in documents %}
+                <div class="building-item">
+                    <div class="building-item-content">
+                        <h3>{{ item.document.original_filename }}</h3>
+                        <p>Objekt: {{ item.building.name }}</p>
+                        <p>Kategorie: {{ item.document.category }}</p>
+                    </div>
+
+                    <div class="action-group">
+                        <a href="/documents/{{ item.document.id }}/download" class="button secondary small">Download</a>
+                        <a href="/buildings/{{ item.building.id }}" class="button small">Zum Objekt</a>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>Keine Dokumente vorhanden.</p>
+    {% endif %}
+</div>
+{% endblock %}

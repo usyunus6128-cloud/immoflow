@@ -1,23 +1,32 @@
-{% extends "base.html" %}
+{% extends "auth_base.html" %}
 
 {% block content %}
-<div class="card narrow auth-card">
-    <h1>Registrieren</h1>
+<div class="card auth-card-large">
+    <div class="auth-header">
+        <h1>Konto erstellen</h1>
+        <p>Erstelle dein ImmoControl Konto und starte mit der strukturierten Verwaltung deiner Immobilien und Vorgänge.</p>
+    </div>
 
     {% if error %}
         <p class="error-text">{{ error }}</p>
     {% endif %}
 
     <form method="post" action="/register">
+        <label for="company_name">Firmenname</label>
+        <input id="company_name" type="text" name="company_name" required>
+
         <label for="username">Benutzername</label>
         <input id="username" type="text" name="username" required>
 
         <label for="password">Passwort</label>
         <input id="password" type="password" name="password" required>
 
-        <button type="submit" class="button">Konto erstellen</button>
+        <button type="submit" class="button auth-button">Konto erstellen</button>
     </form>
 
-    <p class="top-space-small">Schon ein Konto? <a href="/login">Zum Login</a></p>
+    <p class="auth-switch">
+        Schon ein Konto?
+        <a href="/login">Zum Login</a>
+    </p>
 </div>
 {% endblock %}

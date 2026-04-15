@@ -1,53 +1,107 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>TEST DASHBOARD NEU</h1>
 <div class="page-header">
     <div>
         <h1>Dashboard</h1>
-        <p>Übersicht über Objekte, Dokumente und Aufgaben</p>
+        <p>Übersicht über deine Immobilien, Dokumente und Aufgaben</p>
     </div>
+    {% if user.role in ["Inhaber", "Objektmanager"] %}
     <a href="/buildings/new" class="button">Neue Immobilie</a>
+    {% endif %}
 </div>
 
-<div class="stats-grid">
-    <div class="stat-card">
-        <span class="stat-label">Immobilien</span>
+<div class="stats-grid stats-grid-four">
+    <div class="stat-card stat-card-blue">
+        <span class="stat-label stat-label-light">Neue Dokumente</span>
+        <strong class="stat-value stat-value-light">{{ total_documents }}</strong>
+    </div>
+
+    <div class="stat-card stat-card-green">
+        <span class="stat-label stat-label-light">Offene Aufgaben</span>
+        <strong class="stat-value stat-value-light">{{ tasks_with_priority|length }}</strong>
+    </div>
+
+    <div class="stat-card stat-card-orange">
+        <span class="stat-label stat-label-light">Überfällige Aufgaben</span>
+        <strong class="stat-value stat-value-light">{{ overdue_count }}</strong>
+    </div>
+
+    <div class="stat-card stat-card-gray">
+        <span class="stat-label">Verwaltete Objekte</span>
         <strong class="stat-value">{{ buildings|length }}</strong>
-    </div>
-
-    <div class="stat-card">
-        <span class="stat-label">Offene Aufgaben</span>
-        <strong class="stat-value">{{ tasks_with_priority|length }}</strong>
-    </div>
-
-    <div class="stat-card">
-        <span class="stat-label">Erledigte Bereiche</span>
-        <strong class="stat-value">{{ done_matches|length }}</strong>
     </div>
 </div>
 
 <div class="dashboard-grid top-space">
     <div class="card">
-        <h2>Offene Aufgaben</h2>
+        <div class="section-header">
+            <h2>Letzte Dokumente</h2>
+        </div>
+
+        {% if recent_documents %}
+            <div class="building-list">
+                {% for document in recent_documents %}
+                    <div class="building-item">
+                        <div class="building-item-content">
+                            <h3>{{ document.title }}</h3>
+                            <p>{{ document.subtitle }}</p>
+                            <p>Kategorie: {{ document.category }}</p>
+                        </div>
+                        <a href="{{ document.link }}" class="button secondary">Öffnen</a>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p>Noch keine Dokumente vorhanden.</p>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <div class="section-header">
+            <h2>Offene Aufgaben</h2>
+        </div>
 
         {% if tasks_with_priority %}
             <ul class="list">
-                {% for item in tasks_with_priority %}
-                    <li class="list-item priority-box {{ item.priority_class }}">
+                {% for item in tasks_with_priority[:5] %}
+                    <li class="list-item {% if item.is_mine %}assigned-highlight{% endif %}">
                         <div class="list-main">
                             <strong>{{ item.task.title }}</strong><br>
-                            <span>Objekt: {{ item.task.building.name }}</span><br>
-                            <span>Adresse: {{ item.task.building.address }}</span><br>
-                            <span>Status: {{ item.priority_text }}</span>
-                            {% if item.task.due_date %}
-                                <br><span>Fällig: {{ item.task.due_date }}</span>
+                            <span>{{ item.task.building.name }}</span><br>
+                            {% if item.task.assigned_user %}
+                                <span>Zugewiesen an: {{ item.task.assigned_user.username }}</span><br>
                             {% endif %}
-                            {% if item.task.note %}
-                                <br><span>Notiz: {{ item.task.note }}</span>
+                            {% if item.is_mine %}
+                                <span class="assigned-label">Mir zugewiesen</span><br>
+                            {% endif %}
+                            {% if item.task.due_date %}
+                                <span>Fällig: {{ item.task.due_date }}</span><br>
+                            {% endif %}
+                            <span>Status: {{ item.priority_text }}</span>
+                        </div>
+
+                        <div class="status-badge 
+                            {% if item.priority_text == 'Überfällig' %}
+                                status-badge-red
+                            {% elif item.priority_text == 'In den nächsten 3 Tagen fällig' %}
+                                status-badge-red
+                            {% elif item.priority_text == 'In 4 bis 7 Tagen fällig' %}
+                                status-badge-orange
+                            {% else %}
+                                status-badge-green
+                            {% endif %}
+                        ">
+                            {% if item.priority_text == 'Überfällig' %}
+                                Überfällig
+                            {% elif item.priority_text == 'In den nächsten 3 Tagen fällig' %}
+                                Bald fällig
+                            {% elif item.priority_text == 'In 4 bis 7 Tagen fällig' %}
+                                Offen
+                            {% else %}
+                                Offen
                             {% endif %}
                         </div>
-                        <a href="/buildings/{{ item.task.building.id }}" class="button small secondary">Öffnen</a>
                     </li>
                 {% endfor %}
             </ul>
@@ -55,110 +109,48 @@
             <p>Keine offenen Aufgaben vorhanden.</p>
         {% endif %}
     </div>
-
-    <div class="card">
-        <h2>Immobilien suchen</h2>
-        <form method="get" action="/">
-            <label for="search">Suche nach Objektname, Straße, Vermieter oder Mieter</label>
-            <div class="search-row">
-                <input
-                    id="search"
-                    type="text"
-                    name="search"
-                    value="{{ search }}"
-                    placeholder="z. B. Hauptstraße oder Max Mustermann"
-                >
-                <button type="submit" class="button">Suchen</button>
-            </div>
-        </form>
-    </div>
 </div>
 
 <div class="card top-space">
     <div class="section-header">
-        <h2>Immobilien</h2>
+        <h2>Letzte Aktivitäten</h2>
     </div>
 
-    {% if buildings %}
-        <div class="building-list">
-            {% for building in buildings %}
-                <div class="building-item">
-                    <div class="building-item-content">
-                        <h3>{{ building.name }}</h3>
-                        <p>{{ building.address }}</p>
+    {% if recent_activities %}
+        <ul class="list">
+            {% for activity in recent_activities %}
+                <li class="list-item">
+                    <div class="activity-row">
+                        <div class="activity-icon
+                            {% if activity.type == 'document' %}
+                                activity-icon-blue
+                            {% elif activity.type == 'done_task' %}
+                                activity-icon-green
+                            {% else %}
+                                activity-icon-orange
+                            {% endif %}
+                        ">
+                            {% if activity.type == 'document' %}
+                                D
+                            {% elif activity.type == 'done_task' %}
+                                ✓
+                            {% else %}
+                                A
+                            {% endif %}
+                        </div>
 
-                        {% if building.landlord_name %}
-                            <p>Vermieter: {{ building.landlord_name }}</p>
-                        {% endif %}
-
-                        {% if building.tenant_name %}
-                            <p>Mieter: {{ building.tenant_name }}</p>
-                        {% endif %}
-
-                        <div class="building-meta">
-                            <span>Dokumente: {{ building.documents|length }}</span>
-                            <span>Offene Aufgaben: {{ building.tasks|selectattr('status', 'equalto', 'offen')|list|length }}</span>
+                        <div class="list-main">
+                            <strong>{{ activity.title }}</strong><br>
+                            <span>{{ activity.description }}</span>
                         </div>
                     </div>
 
-                    <a href="/buildings/{{ building.id }}" class="button secondary">Öffnen</a>
-                </div>
+                    <a href="{{ activity.link }}" class="activity-link">Zum Objekt</a>
+                </li>
             {% endfor %}
-        </div>
+        </ul>
     {% else %}
-        <p>Keine Immobilien gefunden.</p>
-    {% endif %}
-</div>
-
-<div class="card top-space">
-    <h2>Erledigte Aufgaben</h2>
-
-    <form method="get" action="/" class="top-space-small">
-        <label for="done_search">Suche nach Objektname, Straße, Vermieter oder Mieter</label>
-        <div class="search-row">
-            <input
-                id="done_search"
-                type="text"
-                name="done_search"
-                value="{{ done_search }}"
-                placeholder="z. B. Musterstraße oder Ali Yilmaz"
-            >
-            <button type="submit" class="button">Suchen</button>
-        </div>
-    </form>
-
-    {% if done_matches %}
-        {% for entry in done_matches %}
-            <div class="done-block">
-                <h3>{{ entry.building.name }}</h3>
-                <p>{{ entry.building.address }}</p>
-
-                {% if entry.building.landlord_name %}
-                    <p>Vermieter: {{ entry.building.landlord_name }}</p>
-                {% endif %}
-
-                {% if entry.building.tenant_name %}
-                    <p>Mieter: {{ entry.building.tenant_name }}</p>
-                {% endif %}
-
-                <ul class="list top-space-small">
-                    {% for task in entry.tasks %}
-                        <li class="list-item">
-                            <div class="list-main">
-                                <strong>{{ task.title }}</strong><br>
-                                {% if task.note %}
-                                    <span>Notiz: {{ task.note }}</span><br>
-                                {% endif %}
-                                <span>Status: erledigt</span>
-                            </div>
-                            <a href="/buildings/{{ entry.building.id }}" class="button small secondary">Zum Objekt</a>
-                        </li>
-                    {% endfor %}
-                </ul>
-            </div>
-        {% endfor %}
-    {% else %}
-        <p>Keine erledigten Aufgaben gefunden.</p>
+        <p>Noch keine Aktivitäten vorhanden.</p>
     {% endif %}
 </div>
 {% endblock %}

@@ -3,49 +3,95 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Immocontrol</title>
+    <title>ImmoControl</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-
 <div class="app-layout">
-
-    <!-- Sidebar -->
     <aside class="sidebar">
-        <div class="sidebar-logo">
-            Immocontrol
+        <div class="sidebar-top">
+            <div class="sidebar-brand">
+                <div class="sidebar-logo">ImmoControl</div>
+                <p class="sidebar-subtitle">Immobilien übersichtlich verwalten</p>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="/" class="nav-item {% if request.url.path == '/' %}active{% endif %}">
+                    <span class="nav-text">Dashboard</span>
+                </a>
+
+                <a href="/buildings" class="nav-item {% if request.url.path == '/buildings' %}active{% endif %}">
+                    <span class="nav-text">Immobilien</span>
+                </a>
+
+                <a href="/tasks" class="nav-item {% if request.url.path == '/tasks' %}active{% endif %}">
+                    <span class="nav-text">Aufgaben</span>
+                </a>
+
+                <a href="/documents" class="nav-item {% if request.url.path == '/documents' %}active{% endif %}">
+                    <span class="nav-text">Dokumente</span>
+                </a>
+
+                <a href="/company" class="nav-item {% if request.url.path == '/company' %}active{% endif %}">
+                    <span class="nav-text">Firma</span>
+                </a>
+
+                {% if user and user.role in ["Inhaber", "Objektmanager"] %}
+                <a href="/buildings/new" class="nav-item {% if request.url.path == '/buildings/new' %}active{% endif %}">
+                    <span class="nav-text">Neue Immobilie</span>
+                </a>
+                {% endif %}
+            </nav>
+
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">Später erweiterbar</div>
+
+                <div class="nav-item nav-item-placeholder">
+                    <span class="nav-text">Einstellungen</span>
+                </div>
+            </div>
         </div>
 
-        <nav class="sidebar-nav">
-            <a href="/" class="nav-item">Dashboard</a>
-            <a href="/" class="nav-item">Immobilien</a>
-        </nav>
+        {% if user %}
+        <div class="sidebar-footer">
+            <div class="sidebar-user">
+                <span class="sidebar-user-label">Eingeloggt als</span>
+                <strong>{{ user.username }}</strong>
+                <div class="sidebar-company-name">{{ user.company.name }}</div>
+                <div class="sidebar-role-name">{{ user.role }}</div>
+            </div>
+            <a href="/logout" class="button secondary sidebar-logout">Logout</a>
+        </div>
+        {% endif %}
     </aside>
 
-    <!-- Main -->
     <div class="main-area">
-
-        <!-- Topbar -->
         <header class="topbar">
             <div class="topbar-inner">
-                <div></div>
-                {% if user %}
-                <div class="topbar-actions">
-                    <span class="user-badge">{{ user.username }}</span>
-                    <a href="/logout" class="button small secondary">Logout</a>
+                <div class="topbar-title">
+                    {% if request.url.path == '/' %}
+                        Dashboard
+                    {% elif request.url.path == '/buildings' %}
+                        Immobilien
+                    {% elif request.url.path == '/tasks' %}
+                        Aufgaben
+                    {% elif request.url.path == '/documents' %}
+                        Dokumente
+                    {% elif request.url.path == '/company' %}
+                        Firma
+                    {% elif request.url.path == '/buildings/new' %}
+                        Neue Immobilie
+                    {% else %}
+                        ImmoControl
+                    {% endif %}
                 </div>
-                {% endif %}
             </div>
         </header>
 
-        <!-- Content -->
         <main class="content">
             {% block content %}{% endblock %}
         </main>
-
     </div>
-
 </div>
-
 </body>
 </html>

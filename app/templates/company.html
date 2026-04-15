@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Firma</h1>
+        <p>Verwalte die Daten deiner Organisation sowie Mitarbeiter und Rollen.</p>
+    </div>
+</div>
+
+{% if error %}
+    <p class="error-text">{{ error }}</p>
+{% endif %}
+
+<div class="detail-grid">
+    <div class="card">
+        <div class="section-header">
+            <h2>Firmendaten</h2>
+        </div>
+
+        {% if user.role == ROLE_OWNER %}
+        <form method="post" action="/company">
+            <label for="name">Firmenname</label>
+            <input id="name" type="text" name="name" value="{{ company.name }}" required>
+
+            <label for="email">E Mail</label>
+            <input id="email" type="text" name="email" value="{{ company.email or '' }}">
+
+            <label for="phone">Telefonnummer</label>
+            <input id="phone" type="text" name="phone" value="{{ company.phone or '' }}">
+
+            <label for="address">Adresse</label>
+            <textarea id="address" name="address" rows="4">{{ company.address or '' }}</textarea>
+
+            <button type="submit" class="button">Firmendaten speichern</button>
+        </form>
+        {% else %}
+            <p><strong>Firmenname:</strong> {{ company.name }}</p>
+            <p><strong>E Mail:</strong> {{ company.email or 'Nicht hinterlegt' }}</p>
+            <p><strong>Telefonnummer:</strong> {{ company.phone or 'Nicht hinterlegt' }}</p>
+            <p><strong>Adresse:</strong> {{ company.address or 'Nicht hinterlegt' }}</p>
+            <p class="top-space-small">Nur der Inhaber darf Firmendaten ändern.</p>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <div class="section-header">
+            <h2>Rollenübersicht</h2>
+        </div>
+
+        <div class="role-box top-space-small">
+            <strong>Inhaber</strong>
+            <p>Darf Firmendaten ändern, Mitarbeiter anlegen und Rollen ändern.</p>
+        </div>
+
+        <div class="role-box">
+            <strong>Objektmanager</strong>
+            <p>Darf Immobilien anlegen sowie Dokumente und Aufgaben operativ verwalten.</p>
+        </div>
+
+        <div class="role-box">
+            <strong>Mitarbeiter</strong>
+            <p>Darf im Tagesgeschäft Aufgaben und Dokumente bearbeiten.</p>
+        </div>
+
+        <div class="role-box">
+            <strong>Nur Lesen</strong>
+            <p>Darf Inhalte nur ansehen und nichts verändern.</p>
+        </div>
+    </div>
+</div>
+
+<div class="card top-space">
+    <div class="section-header">
+        <h2>Mitarbeiter</h2>
+    </div>
+
+    {% if company_users %}
+        <div class="building-list">
+            {% for member in company_users %}
+                <div class="building-item">
+                    <div class="building-item-content">
+                        <h3>{{ member.username }}</h3>
+                        <p>Rolle: {{ member.role }}</p>
+                        <p>Status: {{ member.status }}</p>
+                    </div>
+
+                    <div class="action-group">
+                        {% if member.id == user.id %}
+                            <span class="status-badge status-badge-green">Aktueller Benutzer</span>
+                        {% else %}
+                            <span class="status-badge status-badge-orange">Mitarbeiter</span>
+                        {% endif %}
+
+                        {% if user.role == ROLE_OWNER %}
+                        <form method="post" action="/company/users/{{ member.id }}/role" class="inline-role-form">
+                            <select name="role">
+                                <option value="{{ ROLE_OWNER }}" {% if member.role == ROLE_OWNER %}selected{% endif %}>{{ ROLE_OWNER }}</option>
+                                <option value="{{ ROLE_MANAGER }}" {% if member.role == ROLE_MANAGER %}selected{% endif %}>{{ ROLE_MANAGER }}</option>
+                                <option value="{{ ROLE_EMPLOYEE }}" {% if member.role == ROLE_EMPLOYEE %}selected{% endif %}>{{ ROLE_EMPLOYEE }}</option>
+                                <option value="{{ ROLE_READONLY }}" {% if member.role == ROLE_READONLY %}selected{% endif %}>{{ ROLE_READONLY }}</option>
+                            </select>
+                            <button type="submit" class="button small secondary">Rolle ändern</button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>Keine Mitarbeiter vorhanden.</p>
+    {% endif %}
+</div>
+
+{% if user.role == ROLE_OWNER %}
+<div class="card top-space">
+    <div class="section-header">
+        <h2>Mitarbeiter anlegen</h2>
+    </div>
+
+    <form method="post" action="/company/users">
+        <label for="username">Benutzername</label>
+        <input id="username" type="text" name="username" required>
+
+        <label for="password">Passwort</label>
+        <input id="password" type="password" name="password" required>
+
+        <label for="role">Rolle</label>
+        <select id="role" name="role" required>
+            <option value="{{ ROLE_MANAGER }}">{{ ROLE_MANAGER }}</option>
+            <option value="{{ ROLE_EMPLOYEE }}">{{ ROLE_EMPLOYEE }}</option>
+            <option value="{{ ROLE_READONLY }}">{{ ROLE_READONLY }}</option>
+            <option value="{{ ROLE_OWNER }}">{{ ROLE_OWNER }}</option>
+        </select>
+
+        <button type="submit" class="button">Mitarbeiter erstellen</button>
+    </form>
+</div>
+{% endif %}
+{% endblock %}

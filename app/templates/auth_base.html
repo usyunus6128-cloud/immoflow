@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ImmoControl</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="auth-layout">
+        <div class="auth-side">
+            <div class="auth-side-inner">
+                <div class="auth-page-logo">ImmoControl</div>
+                <h1 class="auth-hero-title">Immobilien, Dokumente und Aufgaben an einem Ort</h1>
+                <p class="auth-hero-text">
+                    Behalte Objekte, Dokumente und offene Vorgänge im Blick und arbeite strukturiert in einer zentralen Oberfläche.
+                </p>
+            </div>
+        </div>
+
+        <div class="auth-main">
+            <main class="auth-page-content">
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+</body>
+</html>

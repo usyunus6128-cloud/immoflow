@@ -3,17 +3,49 @@ from sqlalchemy.orm import relationship
 from app.database import Base
 
 
+class Company(Base):
+    __tablename__ = "companies"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True, nullable=False)
+    email = Column(String, nullable=True)
+    phone = Column(String, nullable=True)
+    address = Column(String, nullable=True)
+
+    users = relationship(
+        "User",
+        back_populates="company",
+        cascade="all, delete-orphan"
+    )
+
+    buildings = relationship(
+        "Building",
+        back_populates="company",
+        cascade="all, delete-orphan"
+    )
+
+
 class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, nullable=False, index=True)
     password_hash = Column(String, nullable=False)
+    role = Column(String, nullable=False, default="Mitarbeiter")
+    status = Column(String, nullable=False, default="aktiv")
+
+    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
+
+    company = relationship("Company", back_populates="users")
 
     buildings = relationship(
         "Building",
-        back_populates="user",
-        cascade="all, delete-orphan"
+        back_populates="created_by_user"
+    )
+
+    assigned_tasks = relationship(
+        "Task",
+        back_populates="assigned_user"
     )
 
 
@@ -25,9 +57,14 @@ class Building(Base):
     address = Column(String, nullable=False)
     landlord_name = Column(String, nullable=True)
     tenant_name = Column(String, nullable=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    tenant_email = Column(String, nullable=True)
+    tenant_phone = Column(String, nullable=True)
 
-    user = relationship("User", back_populates="buildings")
+    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
+    created_by_user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+
+    company = relationship("Company", back_populates="buildings")
+    created_by_user = relationship("User", back_populates="buildings")
 
     documents = relationship(
         "Document",
@@ -63,6 +100,9 @@ class Task(Base):
     note = Column(Text, nullable=True)
     due_date = Column(Date, nullable=True)
     status = Column(String, nullable=False, default="offen")
+
     building_id = Column(Integer, ForeignKey("buildings.id"), nullable=False)
+    assigned_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
 
     building = relationship("Building", back_populates="tasks")
+    assigned_user = relationship("User", back_populates="assigned_tasks")

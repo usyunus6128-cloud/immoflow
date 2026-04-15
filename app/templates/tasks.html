@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Aufgaben</h1>
+        <p>Alle offenen und erledigten Aufgaben im Überblick</p>
+    </div>
+</div>
+
+<div class="card">
+    <div class="section-header">
+        <h2>Offene Aufgaben</h2>
+    </div>
+
+    {% if open_tasks_with_priority %}
+        <ul class="list">
+            {% for item in open_tasks_with_priority %}
+                <li class="list-item priority-box {{ item.priority_class }} {% if item.is_mine %}assigned-highlight{% endif %}">
+                    <div class="list-main">
+                        <strong>{{ item.task.title }}</strong><br>
+                        <span>Objekt: {{ item.building.name }}</span><br>
+                        {% if item.task.assigned_user %}
+                            <span>Zugewiesen an: {{ item.task.assigned_user.username }}</span><br>
+                        {% endif %}
+                        {% if item.is_mine %}
+                            <span class="assigned-label">Mir zugewiesen</span><br>
+                        {% endif %}
+                        {% if item.task.note %}
+                            <span>Notiz: {{ item.task.note }}</span><br>
+                        {% endif %}
+                        {% if item.task.due_date %}
+                            <span>Fällig: {{ item.task.due_date }}</span><br>
+                        {% endif %}
+                        <span>Status: {{ item.priority_text }}</span>
+                    </div>
+
+                    <a href="/buildings/{{ item.building.id }}" class="button secondary small">Zum Objekt</a>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>Keine offenen Aufgaben vorhanden.</p>
+    {% endif %}
+</div>
+
+<div class="card top-space">
+    <div class="section-header">
+        <h2>Erledigte Aufgaben</h2>
+    </div>
+
+    {% if done_tasks_list %}
+        <ul class="list">
+            {% for item in done_tasks_list %}
+                <li class="list-item {% if item.is_mine %}assigned-highlight-soft{% endif %}">
+                    <div class="list-main">
+                        <strong>{{ item.task.title }}</strong><br>
+                        <span>Objekt: {{ item.building.name }}</span><br>
+                        {% if item.task.assigned_user %}
+                            <span>Zugewiesen an: {{ item.task.assigned_user.username }}</span><br>
+                        {% endif %}
+                        {% if item.is_mine %}
+                            <span class="assigned-label">Mir zugewiesen</span><br>
+                        {% endif %}
+                        {% if item.task.note %}
+                            <span>Notiz: {{ item.task.note }}</span><br>
+                        {% endif %}
+                        <span>Status: erledigt</span>
+                    </div>
+
+                    <a href="/buildings/{{ item.building.id }}" class="button secondary small">Zum Objekt</a>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>Keine erledigten Aufgaben vorhanden.</p>
+    {% endif %}
+</div>
+{% endblock %}
