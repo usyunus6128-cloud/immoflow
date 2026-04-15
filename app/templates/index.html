@@ -4,7 +4,7 @@
 <div class="page-header">
     <div>
         <h1>Dashboard</h1>
-        <p>Übersicht über deine Immobilien, offenen Aufgaben und erledigten Vorgänge</p>
+        <p>Übersicht über Objekte, Dokumente und Aufgaben</p>
     </div>
     <a href="/buildings/new" class="button">Neue Immobilie</a>
 </div>
@@ -14,38 +14,21 @@
         <span class="stat-label">Immobilien</span>
         <strong class="stat-value">{{ buildings|length }}</strong>
     </div>
+
     <div class="stat-card">
         <span class="stat-label">Offene Aufgaben</span>
         <strong class="stat-value">{{ tasks_with_priority|length }}</strong>
     </div>
+
     <div class="stat-card">
-        <span class="stat-label">Gefundene erledigte Bereiche</span>
+        <span class="stat-label">Erledigte Bereiche</span>
         <strong class="stat-value">{{ done_matches|length }}</strong>
     </div>
 </div>
 
-<div class="card search-card top-space">
-    <h2>Immobilien durchsuchen</h2>
-    <form method="get" action="/">
-        <label for="search">Suche nach Objektname, Straße, Vermieter oder Mieter</label>
-        <div class="search-row">
-            <input
-                id="search"
-                type="text"
-                name="search"
-                value="{{ search }}"
-                placeholder="z. B. Hauptstraße oder Max Mustermann"
-            >
-            <button type="submit" class="button">Suchen</button>
-        </div>
-    </form>
-</div>
-
 <div class="dashboard-grid top-space">
     <div class="card">
-        <div class="section-header">
-            <h2>Offene Aufgaben</h2>
-        </div>
+        <h2>Offene Aufgaben</h2>
 
         {% if tasks_with_priority %}
             <ul class="list">
@@ -73,40 +56,57 @@
     </div>
 
     <div class="card">
-        <div class="section-header">
-            <h2>Immobilien</h2>
-        </div>
-
-        {% if buildings %}
-            <div class="building-list">
-                {% for building in buildings %}
-                    <div class="building-item">
-                        <div class="building-item-content">
-                            <h3>{{ building.name }}</h3>
-                            <p>{{ building.address }}</p>
-
-                            {% if building.landlord_name %}
-                                <p>Vermieter: {{ building.landlord_name }}</p>
-                            {% endif %}
-
-                            {% if building.tenant_name %}
-                                <p>Mieter: {{ building.tenant_name }}</p>
-                            {% endif %}
-
-                            <div class="building-meta">
-                                <span>Dokumente: {{ building.documents|length }}</span>
-                                <span>Offene Aufgaben: {{ building.tasks|selectattr('status', 'equalto', 'offen')|list|length }}</span>
-                            </div>
-                        </div>
-
-                        <a href="/buildings/{{ building.id }}" class="button secondary">Öffnen</a>
-                    </div>
-                {% endfor %}
+        <h2>Immobilien suchen</h2>
+        <form method="get" action="/">
+            <label for="search">Suche nach Objektname, Straße, Vermieter oder Mieter</label>
+            <div class="search-row">
+                <input
+                    id="search"
+                    type="text"
+                    name="search"
+                    value="{{ search }}"
+                    placeholder="z. B. Hauptstraße oder Max Mustermann"
+                >
+                <button type="submit" class="button">Suchen</button>
             </div>
-        {% else %}
-            <p>Keine Immobilien gefunden.</p>
-        {% endif %}
+        </form>
     </div>
+</div>
+
+<div class="card top-space">
+    <div class="section-header">
+        <h2>Immobilien</h2>
+    </div>
+
+    {% if buildings %}
+        <div class="building-list">
+            {% for building in buildings %}
+                <div class="building-item">
+                    <div class="building-item-content">
+                        <h3>{{ building.name }}</h3>
+                        <p>{{ building.address }}</p>
+
+                        {% if building.landlord_name %}
+                            <p>Vermieter: {{ building.landlord_name }}</p>
+                        {% endif %}
+
+                        {% if building.tenant_name %}
+                            <p>Mieter: {{ building.tenant_name }}</p>
+                        {% endif %}
+
+                        <div class="building-meta">
+                            <span>Dokumente: {{ building.documents|length }}</span>
+                            <span>Offene Aufgaben: {{ building.tasks|selectattr('status', 'equalto', 'offen')|list|length }}</span>
+                        </div>
+                    </div>
+
+                    <a href="/buildings/{{ building.id }}" class="button secondary">Öffnen</a>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>Keine Immobilien gefunden.</p>
+    {% endif %}
 </div>
 
 <div class="card top-space">
