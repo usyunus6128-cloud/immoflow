@@ -5,19 +5,42 @@
     <div>
         <h1>{{ building.name }}</h1>
         <p>{{ building.address }}</p>
-        {% if building.landlord_name %}
-            <p>Vermieter: {{ building.landlord_name }}</p>
-        {% endif %}
-        {% if building.tenant_name %}
-            <p>Mieter: {{ building.tenant_name }}</p>
-        {% endif %}
+
+        <div class="object-meta top-space-small">
+            {% if building.landlord_name %}
+                <span>Vermieter: {{ building.landlord_name }}</span>
+            {% endif %}
+            {% if building.tenant_name %}
+                <span>Mieter: {{ building.tenant_name }}</span>
+            {% endif %}
+        </div>
     </div>
+
     <a href="/" class="button secondary">Zurück</a>
 </div>
 
-<div class="detail-grid">
+<div class="stats-grid">
+    <div class="stat-card">
+        <span class="stat-label">Dokumente</span>
+        <strong class="stat-value">{{ building.documents|length }}</strong>
+    </div>
+
+    <div class="stat-card">
+        <span class="stat-label">Offene Aufgaben</span>
+        <strong class="stat-value">{{ open_tasks|length }}</strong>
+    </div>
+
+    <div class="stat-card">
+        <span class="stat-label">Erledigte Aufgaben</span>
+        <strong class="stat-value">{{ done_tasks|length }}</strong>
+    </div>
+</div>
+
+<div class="detail-grid top-space">
     <div class="card">
-        <h2>Dokument hochladen</h2>
+        <div class="section-header">
+            <h2>Dokument hochladen</h2>
+        </div>
 
         <form method="post" action="/documents/upload" enctype="multipart/form-data">
             <input type="hidden" name="building_id" value="{{ building.id }}">
@@ -37,33 +60,39 @@
 
         <hr>
 
-        <h2>Dokumente</h2>
+        <div class="section-header">
+            <h2>Dokumente</h2>
+        </div>
 
         {% if building.documents %}
-            <ul class="list">
+            <div class="building-list">
                 {% for document in building.documents %}
-                    <li class="list-item">
-                        <div>
-                            <strong>{{ document.original_filename }}</strong><br>
-                            <span>{{ document.category }}</span>
+                    <div class="building-item">
+                        <div class="building-item-content">
+                            <h3>{{ document.original_filename }}</h3>
+                            <p>Kategorie: {{ document.category }}</p>
                         </div>
+
                         <div class="action-group">
                             <a href="/documents/{{ document.id }}/download" class="button small secondary">Download</a>
+
                             <form method="post" action="/documents/{{ document.id }}/delete">
                                 <input type="hidden" name="building_id" value="{{ building.id }}">
                                 <button type="submit" class="button small danger">Löschen</button>
                             </form>
                         </div>
-                    </li>
+                    </div>
                 {% endfor %}
-            </ul>
+            </div>
         {% else %}
             <p>Noch keine Dokumente vorhanden.</p>
         {% endif %}
     </div>
 
     <div class="card">
-        <h2>Aufgabe anlegen</h2>
+        <div class="section-header">
+            <h2>Aufgabe anlegen</h2>
+        </div>
 
         <form method="post" action="/tasks">
             <input type="hidden" name="building_id" value="{{ building.id }}">
@@ -82,16 +111,21 @@
 
         <hr>
 
-        <h2>Offene Aufgaben</h2>
+        <div class="section-header">
+            <h2>Offene Aufgaben</h2>
+        </div>
+
         {% if open_tasks %}
             <ul class="list">
                 {% for task in open_tasks %}
                     <li class="task-item vertical-item">
-                        <div>
+                        <div class="list-main">
                             <strong>{{ task.title }}</strong><br>
+
                             {% if task.note %}
                                 <span>Notiz: {{ task.note }}</span><br>
                             {% endif %}
+
                             <span>
                                 {% if task.due_date %}
                                     Fällig: {{ task.due_date }}
@@ -116,21 +150,26 @@
                 {% endfor %}
             </ul>
         {% else %}
-            <p>Keine offenen Aufgaben.</p>
+            <p>Keine offenen Aufgaben vorhanden.</p>
         {% endif %}
 
         <hr>
 
-        <h2>Erledigte Aufgaben</h2>
+        <div class="section-header">
+            <h2>Erledigte Aufgaben</h2>
+        </div>
+
         {% if done_tasks %}
             <ul class="list">
                 {% for task in done_tasks %}
                     <li class="list-item">
-                        <div>
+                        <div class="list-main">
                             <strong>{{ task.title }}</strong><br>
+
                             {% if task.note %}
                                 <span>Notiz: {{ task.note }}</span><br>
                             {% endif %}
+
                             <span>Status: erledigt</span>
                         </div>
 
@@ -142,7 +181,7 @@
                 {% endfor %}
             </ul>
         {% else %}
-            <p>Noch keine erledigten Aufgaben.</p>
+            <p>Noch keine erledigten Aufgaben vorhanden.</p>
         {% endif %}
     </div>
 </div>
