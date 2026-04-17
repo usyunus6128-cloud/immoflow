@@ -13,7 +13,7 @@
 {% endif %}
 
 <div class="detail-grid">
-    <div class="card">
+    <div class="card glass-card">
         <div class="section-header">
             <h2>Firmendaten</h2>
         </div>
@@ -24,7 +24,7 @@
             <input id="name" type="text" name="name" value="{{ company.name }}" required>
 
             <label for="email">E Mail</label>
-            <input id="email" type="text" name="email" value="{{ company.email or '' }}">
+            <input id="email" type="email" name="email" value="{{ company.email or '' }}">
 
             <label for="phone">Telefonnummer</label>
             <input id="phone" type="text" name="phone" value="{{ company.phone or '' }}">
@@ -43,14 +43,14 @@
         {% endif %}
     </div>
 
-    <div class="card">
+    <div class="card glass-card">
         <div class="section-header">
             <h2>Rollenübersicht</h2>
         </div>
 
         <div class="role-box top-space-small">
             <strong>Inhaber</strong>
-            <p>Darf Firmendaten ändern, Mitarbeiter anlegen und Rollen ändern.</p>
+            <p>Darf Firmendaten ändern, Mitarbeiter anlegen, Rollen ändern und Mitarbeiter aktiv oder inaktiv schalten.</p>
         </div>
 
         <div class="role-box">
@@ -70,7 +70,7 @@
     </div>
 </div>
 
-<div class="card top-space">
+<div class="card glass-card top-space">
     <div class="section-header">
         <h2>Mitarbeiter</h2>
     </div>
@@ -78,9 +78,10 @@
     {% if company_users %}
         <div class="building-list">
             {% for member in company_users %}
-                <div class="building-item">
+                <div class="building-item task-card-line">
                     <div class="building-item-content">
                         <h3>{{ member.username }}</h3>
+                        <p>E Mail: {{ member.email or 'Nicht hinterlegt' }}</p>
                         <p>Rolle: {{ member.role }}</p>
                         <p>Status: {{ member.status }}</p>
                     </div>
@@ -88,8 +89,10 @@
                     <div class="action-group">
                         {% if member.id == user.id %}
                             <span class="status-badge status-badge-green">Aktueller Benutzer</span>
+                        {% elif member.status == "aktiv" %}
+                            <span class="status-badge status-badge-green">Aktiv</span>
                         {% else %}
-                            <span class="status-badge status-badge-orange">Mitarbeiter</span>
+                            <span class="status-badge status-badge-red">Inaktiv</span>
                         {% endif %}
 
                         {% if user.role == ROLE_OWNER %}
@@ -102,6 +105,14 @@
                             </select>
                             <button type="submit" class="button small secondary">Rolle ändern</button>
                         </form>
+
+                        <form method="post" action="/company/users/{{ member.id }}/status" class="inline-role-form">
+                            <select name="status">
+                                <option value="aktiv" {% if member.status == "aktiv" %}selected{% endif %}>aktiv</option>
+                                <option value="inaktiv" {% if member.status == "inaktiv" %}selected{% endif %}>inaktiv</option>
+                            </select>
+                            <button type="submit" class="button small secondary">Status ändern</button>
+                        </form>
                         {% endif %}
                     </div>
                 </div>
@@ -113,7 +124,7 @@
 </div>
 
 {% if user.role == ROLE_OWNER %}
-<div class="card top-space">
+<div class="card glass-card top-space">
     <div class="section-header">
         <h2>Mitarbeiter anlegen</h2>
     </div>
@@ -121,6 +132,9 @@
     <form method="post" action="/company/users">
         <label for="username">Benutzername</label>
         <input id="username" type="text" name="username" required>
+
+        <label for="email">E Mail</label>
+        <input id="email" type="email" name="email">
 
         <label for="password">Passwort</label>
         <input id="password" type="password" name="password" required>

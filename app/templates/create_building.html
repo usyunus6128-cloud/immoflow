@@ -8,13 +8,23 @@
     <a href="/" class="button secondary">Zurück</a>
 </div>
 
-<div class="card narrow">
+<div class="card narrow glass-card">
     <form method="post" action="/buildings">
         <label for="name">Objektname</label>
         <input id="name" type="text" name="name" required>
 
         <label for="address">Adresse / Straße</label>
         <input id="address" type="text" name="address" required>
+
+        <label for="status">Objektstatus</label>
+        <select id="status" name="status" required>
+            {% for item in building_statuses %}
+                <option value="{{ item }}">{{ item }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="contact_person">Ansprechpartner</label>
+        <input id="contact_person" type="text" name="contact_person">
 
         <label for="landlord_name">Vermieter</label>
         <input id="landlord_name" type="text" name="landlord_name">
@@ -23,10 +33,16 @@
         <input id="tenant_name" type="text" name="tenant_name">
 
         <label for="tenant_email">Mieter E Mail</label>
-        <input id="tenant_email" type="text" name="tenant_email">
+        <input id="tenant_email" type="email" name="tenant_email">
 
         <label for="tenant_phone">Mieter Telefonnummer</label>
         <input id="tenant_phone" type="text" name="tenant_phone">
+
+        <label for="notes">Gebäude Notizen</label>
+        <textarea id="notes" name="notes" rows="4"></textarea>
+
+        <label for="internal_description">Interne Objektbeschreibung</label>
+        <textarea id="internal_description" name="internal_description" rows="5"></textarea>
 
         <button type="submit" class="button">Immobilie speichern</button>
     </form>

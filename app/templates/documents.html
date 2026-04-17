@@ -4,30 +4,51 @@
 <div class="page-header">
     <div>
         <h1>Dokumente</h1>
-        <p>Alle hochgeladenen Dokumente im Überblick</p>
+        <p>Suche, filtere und bearbeite Dokumente zentral an einem Ort.</p>
     </div>
 </div>
 
-<div class="card">
+<div class="card search-card glass-card">
+    <form method="get" action="/documents">
+        <label for="search">Suche nach Titel, Dateiname, Kategorie oder Objekt</label>
+        <div class="search-row">
+            <input id="search" type="text" name="search" value="{{ search }}" placeholder="z. B. Vertrag oder Musterstraße">
+            <select name="category">
+                <option value="">Alle Kategorien</option>
+                {% for item in document_categories %}
+                    <option value="{{ item }}" {% if category == item %}selected{% endif %}>{{ item }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="button">Filtern</button>
+        </div>
+    </form>
+</div>
+
+<div class="card glass-card">
     {% if documents %}
         <div class="building-list">
             {% for item in documents %}
-                <div class="building-item">
+                <div class="building-item task-card-line">
                     <div class="building-item-content">
-                        <h3>{{ item.document.original_filename }}</h3>
+                        <h3>{{ item.document.title or item.document.original_filename }}</h3>
+                        <p>Dateiname: {{ item.document.original_filename }}</p>
                         <p>Objekt: {{ item.building.name }}</p>
                         <p>Kategorie: {{ item.document.category }}</p>
+                        <p>Hochgeladen: {{ item.document.created_at.strftime('%d.%m.%Y %H:%M') }}</p>
                     </div>
 
                     <div class="action-group">
                         <a href="/documents/{{ item.document.id }}/download" class="button secondary small">Download</a>
-                        <a href="/buildings/{{ item.building.id }}" class="button small">Zum Objekt</a>
+                        {% if user.role in [ROLE_OWNER, ROLE_MANAGER] %}
+                        <a href="/documents/{{ item.document.id }}/edit" class="button small">Bearbeiten</a>
+                        {% endif %}
+                        <a href="/buildings/{{ item.building.id }}" class="button small secondary">Zum Objekt</a>
                     </div>
                 </div>
             {% endfor %}
         </div>
     {% else %}
-        <p>Keine Dokumente vorhanden.</p>
+        <p>Keine Dokumente gefunden.</p>
     {% endif %}
 </div>
 {% endblock %}

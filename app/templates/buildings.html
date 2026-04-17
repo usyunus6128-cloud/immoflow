@@ -6,12 +6,12 @@
         <h1>Immobilien</h1>
         <p>Alle Objekte im Überblick</p>
     </div>
-    {% if user.role in [ROLE_OWNER, ROLE_MANAGER] %}
+    {% if user.role in ["Inhaber", "Objektmanager"] %}
     <a href="/buildings/new" class="button">Neue Immobilie</a>
     {% endif %}
 </div>
 
-<div class="card search-card">
+<div class="card search-card glass-card">
     <form method="get" action="/buildings">
         <label for="search">Suche nach Objektname, Straße, Vermieter, Mieter, E Mail oder Telefonnummer</label>
         <div class="search-row">
@@ -21,11 +21,11 @@
     </form>
 </div>
 
-<div class="card top-space">
+<div class="card top-space glass-card">
     {% if buildings %}
         <div class="building-list">
             {% for building in buildings %}
-                <div class="building-item">
+                <div class="building-item task-card-line">
                     <div class="building-item-content">
                         <h3>{{ building.name }}</h3>
                         <p>{{ building.address }}</p>

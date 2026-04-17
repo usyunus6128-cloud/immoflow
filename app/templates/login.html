@@ -1,29 +1,70 @@
-{% extends "auth_base.html" %}
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | ImmoControl</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="auth-body">
+    <div class="auth-layout">
+        <div class="auth-brand-panel">
+            <div class="auth-brand-content">
+                <div class="auth-logo-box">
+                    <div class="auth-logo-icon">IC</div>
+                    <div>
+                        <div class="auth-logo-title">ImmoControl</div>
+                        <div class="auth-logo-subtitle">Immobilien. Dokumente. Aufgaben.</div>
+                    </div>
+                </div>
 
-{% block content %}
-<div class="card auth-card-large">
-    <div class="auth-header">
-        <h1>Willkommen zurück</h1>
-        <p>Melde dich bei ImmoControl an und verwalte deine Immobilien, Dokumente und Aufgaben an einem Ort.</p>
+                <div class="auth-brand-text">
+                    <h1>Verwalte Immobilien professionell an einem Ort</h1>
+                    <p>
+                        Behalte Gebäude, Dokumente, Aufgaben und Mitarbeiter strukturiert im Blick.
+                        Modern, klar und für den täglichen Einsatz gebaut.
+                    </p>
+                </div>
+
+                <div class="auth-feature-list">
+                    <div class="auth-feature-item">Zentrale Objektverwaltung</div>
+                    <div class="auth-feature-item">Dokumente schnell finden</div>
+                    <div class="auth-feature-item">Aufgaben und Fristen im Blick</div>
+                    <div class="auth-feature-item">Mehrere Benutzer pro Firma</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="auth-form-panel">
+            <div class="auth-form-card">
+                <div class="auth-form-header">
+                    <h2>Einloggen</h2>
+                    <p>Melde dich mit deinen Firmendaten an</p>
+                </div>
+
+                {% if error %}
+                    <div class="auth-error">{{ error }}</div>
+                {% endif %}
+
+                <form method="post" action="/login">
+                    <label for="company_name">Firmenname</label>
+                    <input id="company_name" type="text" name="company_name" required>
+
+                    <label for="username">Benutzername</label>
+                    <input id="username" type="text" name="username" required>
+
+                    <label for="password">Passwort</label>
+                    <input id="password" type="password" name="password" required>
+
+                    <button type="submit" class="button auth-submit-button">Jetzt einloggen</button>
+                </form>
+
+                <div class="auth-switch-text">
+                    Noch kein Konto vorhanden?
+                    <a href="/register">Jetzt registrieren</a>
+                </div>
+            </div>
+        </div>
     </div>
-
-    {% if error %}
-        <p class="error-text">{{ error }}</p>
-    {% endif %}
-
-    <form method="post" action="/login">
-        <label for="username">Benutzername</label>
-        <input id="username" type="text" name="username" required>
-
-        <label for="password">Passwort</label>
-        <input id="password" type="password" name="password" required>
-
-        <button type="submit" class="button auth-button">Einloggen</button>
-    </form>
-
-    <p class="auth-switch">
-        Noch kein Konto?
-        <a href="/register">Jetzt registrieren</a>
-    </p>
-</div>
-{% endblock %}
+</body>
+</html>

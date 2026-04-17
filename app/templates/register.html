@@ -1,32 +1,73 @@
-{% extends "auth_base.html" %}
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registrieren | ImmoControl</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="auth-body">
+    <div class="auth-layout">
+        <div class="auth-brand-panel">
+            <div class="auth-brand-content">
+                <div class="auth-logo-box">
+                    <div class="auth-logo-icon">IC</div>
+                    <div>
+                        <div class="auth-logo-title">ImmoControl</div>
+                        <div class="auth-logo-subtitle">Dein Start in eine saubere Immobilienverwaltung</div>
+                    </div>
+                </div>
 
-{% block content %}
-<div class="card auth-card-large">
-    <div class="auth-header">
-        <h1>Konto erstellen</h1>
-        <p>Erstelle dein ImmoControl Konto und starte mit der strukturierten Verwaltung deiner Immobilien und Vorgänge.</p>
+                <div class="auth-brand-text">
+                    <h1>Erstelle deine Firma und starte direkt mit dem ersten Objekt</h1>
+                    <p>
+                        Lege dein Unternehmen an, erstelle den Inhaber Account und beginne sofort
+                        mit Dokumenten, Aufgaben und Immobilien Stammdaten.
+                    </p>
+                </div>
+
+                <div class="auth-feature-list">
+                    <div class="auth-feature-item">Eigene Firma anlegen</div>
+                    <div class="auth-feature-item">Mehrbenutzerfähig</div>
+                    <div class="auth-feature-item">Dokumente und Aufgaben bündeln</div>
+                    <div class="auth-feature-item">Schnell erweiterbar für spätere KI Funktionen</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="auth-form-panel">
+            <div class="auth-form-card">
+                <div class="auth-form-header">
+                    <h2>Registrieren</h2>
+                    <p>Erstelle deine Firma und den ersten Benutzer</p>
+                </div>
+
+                {% if error %}
+                    <div class="auth-error">{{ error }}</div>
+                {% endif %}
+
+                <form method="post" action="/register">
+                    <label for="company_name">Firmenname</label>
+                    <input id="company_name" type="text" name="company_name" required>
+
+                    <label for="username">Benutzername</label>
+                    <input id="username" type="text" name="username" required>
+
+                    <label for="email">E Mail</label>
+                    <input id="email" type="email" name="email">
+
+                    <label for="password">Passwort</label>
+                    <input id="password" type="password" name="password" required>
+
+                    <button type="submit" class="button auth-submit-button">Konto erstellen</button>
+                </form>
+
+                <div class="auth-switch-text">
+                    Bereits registriert?
+                    <a href="/login">Zum Login</a>
+                </div>
+            </div>
+        </div>
     </div>
-
-    {% if error %}
-        <p class="error-text">{{ error }}</p>
-    {% endif %}
-
-    <form method="post" action="/register">
-        <label for="company_name">Firmenname</label>
-        <input id="company_name" type="text" name="company_name" required>
-
-        <label for="username">Benutzername</label>
-        <input id="username" type="text" name="username" required>
-
-        <label for="password">Passwort</label>
-        <input id="password" type="password" name="password" required>
-
-        <button type="submit" class="button auth-button">Konto erstellen</button>
-    </form>
-
-    <p class="auth-switch">
-        Schon ein Konto?
-        <a href="/login">Zum Login</a>
-    </p>
-</div>
-{% endblock %}
+</body>
+</html>

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Einstellungen</h1>
+        <p>Verwalte dein Benutzerkonto und ändere dein Passwort.</p>
+    </div>
+</div>
+
+{% if error %}
+    <p class="error-text">{{ error }}</p>
+{% endif %}
+
+{% if success %}
+    <p>{{ success }}</p>
+{% endif %}
+
+<div class="detail-grid">
+    <div class="card glass-card">
+        <div class="section-header">
+            <h2>Kontoinformationen</h2>
+        </div>
+
+        <p><strong>Benutzername:</strong> {{ user.username }}</p>
+        <p><strong>E Mail:</strong> {{ user.email or 'Nicht hinterlegt' }}</p>
+        <p><strong>Rolle:</strong> {{ user.role }}</p>
+        <p><strong>Status:</strong> {{ user.status }}</p>
+        <p><strong>Firma:</strong> {{ user.company.name }}</p>
+    </div>
+
+    <div class="card glass-card">
+        <div class="section-header">
+            <h2>Passwort ändern</h2>
+        </div>
+
+        <form method="post" action="/settings/password">
+            <label for="current_password">Aktuelles Passwort</label>
+            <input id="current_password" type="password" name="current_password" required>
+
+            <label for="new_password">Neues Passwort</label>
+            <input id="new_password" type="password" name="new_password" required>
+
+            <label for="new_password_repeat">Neues Passwort wiederholen</label>
+            <input id="new_password_repeat" type="password" name="new_password_repeat" required>
+
+            <button type="submit" class="button">Passwort speichern</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

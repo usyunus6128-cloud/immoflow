@@ -4,22 +4,79 @@
 <div class="page-header">
     <div>
         <h1>Aufgaben</h1>
-        <p>Alle offenen und erledigten Aufgaben im Überblick</p>
+        <p>Filtere Aufgaben flexibel und kombiniere mehrere Ansichten gleichzeitig.</p>
     </div>
 </div>
 
-<div class="card">
+<div class="card glass-card search-card">
+    <form method="get" action="/tasks">
+        <div class="filter-grid">
+            <label class="filter-check">
+                <input type="checkbox" name="mine" value="1" {% if mine %}checked{% endif %}>
+                <span>Meine</span>
+            </label>
+
+            <label class="filter-check">
+                <input type="checkbox" name="open_only" value="1" {% if open_only %}checked{% endif %}>
+                <span>Offen</span>
+            </label>
+
+            <label class="filter-check">
+                <input type="checkbox" name="done_only" value="1" {% if done_only %}checked{% endif %}>
+                <span>Erledigt</span>
+            </label>
+
+            <label class="filter-check">
+                <input type="checkbox" name="overdue" value="1" {% if overdue %}checked{% endif %}>
+                <span>Überfällig</span>
+            </label>
+
+            <label class="filter-check">
+                <input type="checkbox" name="due_today" value="1" {% if due_today %}checked{% endif %}>
+                <span>Heute</span>
+            </label>
+
+            <label class="filter-check">
+                <input type="checkbox" name="due_week" value="1" {% if due_week %}checked{% endif %}>
+                <span>Diese Woche</span>
+            </label>
+
+            <label class="filter-check">
+                <input type="checkbox" name="high_priority" value="1" {% if high_priority %}checked{% endif %}>
+                <span>Priorität hoch</span>
+            </label>
+
+            <label class="filter-check">
+                <input type="checkbox" name="medium_priority" value="1" {% if medium_priority %}checked{% endif %}>
+                <span>Priorität mittel</span>
+            </label>
+
+            <label class="filter-check">
+                <input type="checkbox" name="low_priority" value="1" {% if low_priority %}checked{% endif %}>
+                <span>Priorität status</span>
+            </label>
+        </div>
+
+        <div class="top-space-small">
+            <button type="submit" class="button">Filter anwenden</button>
+            <a href="/tasks" class="button secondary">Zurücksetzen</a>
+        </div>
+    </form>
+</div>
+
+<div class="card glass-card">
     <div class="section-header">
-        <h2>Offene Aufgaben</h2>
+        <h2>Gefilterte offene Aufgaben</h2>
     </div>
 
     {% if open_tasks_with_priority %}
         <ul class="list">
             {% for item in open_tasks_with_priority %}
-                <li class="list-item priority-box {{ item.priority_class }} {% if item.is_mine %}assigned-highlight{% endif %}">
+                <li class="list-item priority-box {{ item.priority_class }} task-panel {% if item.is_mine %}assigned-highlight{% endif %}">
                     <div class="list-main">
                         <strong>{{ item.task.title }}</strong><br>
                         <span>Objekt: {{ item.building.name }}</span><br>
+                        <span>Priorität: {{ item.task.priority|capitalize }}</span><br>
                         {% if item.task.assigned_user %}
                             <span>Zugewiesen an: {{ item.task.assigned_user.username }}</span><br>
                         {% endif %}
@@ -30,32 +87,38 @@
                             <span>Notiz: {{ item.task.note }}</span><br>
                         {% endif %}
                         {% if item.task.due_date %}
-                            <span>Fällig: {{ item.task.due_date }}</span><br>
+                            <span class="task-deadline {% if item.priority_class == 'red' %}red{% elif item.priority_class == 'yellow' %}orange{% endif %}">
+                                Fällig: {{ item.task.due_date }}
+                            </span><br>
                         {% endif %}
                         <span>Status: {{ item.priority_text }}</span>
                     </div>
 
-                    <a href="/buildings/{{ item.building.id }}" class="button secondary small">Zum Objekt</a>
+                    <div class="action-group">
+                        <a href="/tasks/{{ item.task.id }}/edit" class="button secondary small">Bearbeiten</a>
+                        <a href="/buildings/{{ item.building.id }}" class="button secondary small">Zum Objekt</a>
+                    </div>
                 </li>
             {% endfor %}
         </ul>
     {% else %}
-        <p>Keine offenen Aufgaben vorhanden.</p>
+        <p>Keine offenen Aufgaben für diese Filter gefunden.</p>
     {% endif %}
 </div>
 
-<div class="card top-space">
+<div class="card glass-card top-space">
     <div class="section-header">
-        <h2>Erledigte Aufgaben</h2>
+        <h2>Gefilterte erledigte Aufgaben</h2>
     </div>
 
     {% if done_tasks_list %}
         <ul class="list">
             {% for item in done_tasks_list %}
-                <li class="list-item {% if item.is_mine %}assigned-highlight-soft{% endif %}">
+                <li class="list-item task-panel-soft {% if item.is_mine %}assigned-highlight-soft{% endif %}">
                     <div class="list-main">
                         <strong>{{ item.task.title }}</strong><br>
                         <span>Objekt: {{ item.building.name }}</span><br>
+                        <span>Priorität: {{ item.task.priority|capitalize }}</span><br>
                         {% if item.task.assigned_user %}
                             <span>Zugewiesen an: {{ item.task.assigned_user.username }}</span><br>
                         {% endif %}
@@ -68,12 +131,14 @@
                         <span>Status: erledigt</span>
                     </div>
 
-                    <a href="/buildings/{{ item.building.id }}" class="button secondary small">Zum Objekt</a>
+                    <div class="action-group">
+                        <a href="/buildings/{{ item.building.id }}" class="button secondary small">Zum Objekt</a>
+                    </div>
                 </li>
             {% endfor %}
         </ul>
     {% else %}
-        <p>Keine erledigten Aufgaben vorhanden.</p>
+        <p>Keine erledigten Aufgaben für diese Filter gefunden.</p>
     {% endif %}
 </div>
 {% endblock %}

@@ -12,7 +12,7 @@
         <div class="sidebar-top">
             <div class="sidebar-brand">
                 <div class="sidebar-logo">ImmoControl</div>
-                <p class="sidebar-subtitle">Immobilien übersichtlich verwalten</p>
+                <p class="sidebar-subtitle">Klar. Modern. Teamfähig.</p>
             </div>
 
             <nav class="sidebar-nav">
@@ -32,8 +32,16 @@
                     <span class="nav-text">Dokumente</span>
                 </a>
 
+                <a href="/emails" class="nav-item {% if request.url.path == '/emails' %}active{% endif %}">
+                    <span class="nav-text">E Mails</span>
+                </a>
+
                 <a href="/company" class="nav-item {% if request.url.path == '/company' %}active{% endif %}">
                     <span class="nav-text">Firma</span>
+                </a>
+
+                <a href="/settings" class="nav-item {% if request.url.path == '/settings' %}active{% endif %}">
+                    <span class="nav-text">Einstellungen</span>
                 </a>
 
                 {% if user and user.role in ["Inhaber", "Objektmanager"] %}
@@ -42,14 +50,6 @@
                 </a>
                 {% endif %}
             </nav>
-
-            <div class="sidebar-section">
-                <div class="sidebar-section-title">Später erweiterbar</div>
-
-                <div class="nav-item nav-item-placeholder">
-                    <span class="nav-text">Einstellungen</span>
-                </div>
-            </div>
         </div>
 
         {% if user %}
@@ -77,8 +77,12 @@
                         Aufgaben
                     {% elif request.url.path == '/documents' %}
                         Dokumente
+                    {% elif request.url.path == '/emails' %}
+                        E Mails
                     {% elif request.url.path == '/company' %}
                         Firma
+                    {% elif request.url.path == '/settings' %}
+                        Einstellungen
                     {% elif request.url.path == '/buildings/new' %}
                         Neue Immobilie
                     {% else %}

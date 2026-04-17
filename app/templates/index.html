@@ -4,37 +4,73 @@
 <div class="page-header">
     <div>
         <h1>Dashboard</h1>
-        <p>Übersicht über deine Immobilien, Dokumente und Aufgaben</p>
+        <p>Übersicht über Immobilien, Dokumente, Aufgaben und aktuelle Aktivität</p>
     </div>
     {% if user.role in ["Inhaber", "Objektmanager"] %}
     <a href="/buildings/new" class="button">Neue Immobilie</a>
     {% endif %}
 </div>
 
-<div class="stats-grid stats-grid-four">
+<div class="quick-actions top-space-small">
+    <a href="/tasks?mine=1&open_only=1" class="quick-action-card">Meine offenen Aufgaben</a>
+    <a href="/tasks?overdue=1&open_only=1" class="quick-action-card">Überfällige Aufgaben</a>
+    <a href="/documents" class="quick-action-card">Dokumente verwalten</a>
+    <a href="/company" class="quick-action-card">Firma und Mitarbeiter</a>
+</div>
+
+{% if my_tasks %}
+<div class="card top-space dashboard-focus-card">
+    <div class="section-header">
+        <h2>Meine Aufgaben</h2>
+    </div>
+
+    <ul class="list">
+        {% for item in my_tasks[:5] %}
+            <li class="list-item assigned-highlight task-card-line">
+                <div class="list-main">
+                    <strong>{{ item.task.title }}</strong><br>
+                    <span>{{ item.task.building.name }}</span><br>
+                    <span class="assigned-label">Mir zugewiesen</span><br>
+                    <span>Priorität: {{ item.task.priority|capitalize }}</span><br>
+                    {% if item.task.due_date %}
+                        <span class="task-deadline {% if item.priority_class == 'red' %}red{% elif item.priority_class == 'yellow' %}orange{% endif %}">
+                            Fällig: {{ item.task.due_date }}
+                        </span><br>
+                    {% endif %}
+                    <span>Status: {{ item.priority_text }}</span>
+                </div>
+
+                <a href="/buildings/{{ item.task.building.id }}" class="button secondary small">Zum Objekt</a>
+            </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+<div class="stats-grid stats-grid-four top-space">
     <div class="stat-card stat-card-blue">
-        <span class="stat-label stat-label-light">Neue Dokumente</span>
+        <span class="stat-label stat-label-light">Dokumente</span>
         <strong class="stat-value stat-value-light">{{ total_documents }}</strong>
     </div>
 
     <div class="stat-card stat-card-green">
-        <span class="stat-label stat-label-light">Offene Aufgaben</span>
-        <strong class="stat-value stat-value-light">{{ tasks_with_priority|length }}</strong>
+        <span class="stat-label stat-label-light">Aufgaben heute</span>
+        <strong class="stat-value stat-value-light">{{ today_tasks_count }}</strong>
     </div>
 
     <div class="stat-card stat-card-orange">
-        <span class="stat-label stat-label-light">Überfällige Aufgaben</span>
-        <strong class="stat-value stat-value-light">{{ overdue_count }}</strong>
+        <span class="stat-label stat-label-light">Diese Woche</span>
+        <strong class="stat-value stat-value-light">{{ week_tasks_count }}</strong>
     </div>
 
     <div class="stat-card stat-card-gray">
-        <span class="stat-label">Verwaltete Objekte</span>
-        <strong class="stat-value">{{ buildings|length }}</strong>
+        <span class="stat-label">Überfällige Aufgaben</span>
+        <strong class="stat-value">{{ overdue_count }}</strong>
     </div>
 </div>
 
 <div class="dashboard-grid top-space">
-    <div class="card">
+    <div class="card glass-card">
         <div class="section-header">
             <h2>Letzte Dokumente</h2>
         </div>
@@ -42,7 +78,7 @@
         {% if recent_documents %}
             <div class="building-list">
                 {% for document in recent_documents %}
-                    <div class="building-item">
+                    <div class="building-item task-card-line">
                         <div class="building-item-content">
                             <h3>{{ document.title }}</h3>
                             <p>{{ document.subtitle }}</p>
@@ -57,7 +93,7 @@
         {% endif %}
     </div>
 
-    <div class="card">
+    <div class="card glass-card">
         <div class="section-header">
             <h2>Offene Aufgaben</h2>
         </div>
@@ -65,10 +101,11 @@
         {% if tasks_with_priority %}
             <ul class="list">
                 {% for item in tasks_with_priority[:5] %}
-                    <li class="list-item {% if item.is_mine %}assigned-highlight{% endif %}">
+                    <li class="list-item {% if item.is_mine %}assigned-highlight{% endif %} task-card-line">
                         <div class="list-main">
                             <strong>{{ item.task.title }}</strong><br>
                             <span>{{ item.task.building.name }}</span><br>
+                            <span>Priorität: {{ item.task.priority|capitalize }}</span><br>
                             {% if item.task.assigned_user %}
                                 <span>Zugewiesen an: {{ item.task.assigned_user.username }}</span><br>
                             {% endif %}
@@ -76,7 +113,9 @@
                                 <span class="assigned-label">Mir zugewiesen</span><br>
                             {% endif %}
                             {% if item.task.due_date %}
-                                <span>Fällig: {{ item.task.due_date }}</span><br>
+                                <span class="task-deadline {% if item.priority_class == 'red' %}red{% elif item.priority_class == 'yellow' %}orange{% endif %}">
+                                    Fällig: {{ item.task.due_date }}
+                                </span><br>
                             {% endif %}
                             <span>Status: {{ item.priority_text }}</span>
                         </div>
@@ -92,15 +131,7 @@
                                 status-badge-green
                             {% endif %}
                         ">
-                            {% if item.priority_text == 'Überfällig' %}
-                                Überfällig
-                            {% elif item.priority_text == 'In den nächsten 3 Tagen fällig' %}
-                                Bald fällig
-                            {% elif item.priority_text == 'In 4 bis 7 Tagen fällig' %}
-                                Offen
-                            {% else %}
-                                Offen
-                            {% endif %}
+                            {{ item.task.priority|capitalize }}
                         </div>
                     </li>
                 {% endfor %}
@@ -111,46 +142,73 @@
     </div>
 </div>
 
-<div class="card top-space">
-    <div class="section-header">
-        <h2>Letzte Aktivitäten</h2>
+<div class="dashboard-grid top-space">
+    <div class="card glass-card">
+        <div class="section-header">
+            <h2>Letzte Kommentare</h2>
+        </div>
+
+        {% if recent_comments %}
+            <div class="comment-feed">
+                {% for comment in recent_comments %}
+                    <div class="comment-feed-item">
+                        <div class="comment-feed-meta">
+                            <strong>{{ comment.user.username }}</strong>
+                            <span>{{ comment.created_at.strftime('%d.%m.%Y %H:%M') }}</span>
+                        </div>
+                        <div class="comment-feed-task">
+                            Aufgabe: {{ comment.task.title }}
+                        </div>
+                        <p>{{ comment.text }}</p>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p>Noch keine Kommentare vorhanden.</p>
+        {% endif %}
     </div>
 
-    {% if recent_activities %}
-        <ul class="list">
-            {% for activity in recent_activities %}
-                <li class="list-item">
-                    <div class="activity-row">
-                        <div class="activity-icon
-                            {% if activity.type == 'document' %}
-                                activity-icon-blue
-                            {% elif activity.type == 'done_task' %}
-                                activity-icon-green
-                            {% else %}
-                                activity-icon-orange
-                            {% endif %}
-                        ">
-                            {% if activity.type == 'document' %}
-                                D
-                            {% elif activity.type == 'done_task' %}
-                                ✓
-                            {% else %}
-                                A
-                            {% endif %}
+    <div class="card glass-card">
+        <div class="section-header">
+            <h2>Letzte Aktivitäten</h2>
+        </div>
+
+        {% if recent_activities %}
+            <ul class="list">
+                {% for activity in recent_activities %}
+                    <li class="list-item task-card-line">
+                        <div class="activity-row">
+                            <div class="activity-icon
+                                {% if activity.type == 'document' %}
+                                    activity-icon-blue
+                                {% elif activity.type == 'done_task' %}
+                                    activity-icon-green
+                                {% else %}
+                                    activity-icon-orange
+                                {% endif %}
+                            ">
+                                {% if activity.type == 'document' %}
+                                    D
+                                {% elif activity.type == 'done_task' %}
+                                    ✓
+                                {% else %}
+                                    A
+                                {% endif %}
+                            </div>
+
+                            <div class="list-main">
+                                <strong>{{ activity.title }}</strong><br>
+                                <span>{{ activity.description }}</span>
+                            </div>
                         </div>
 
-                        <div class="list-main">
-                            <strong>{{ activity.title }}</strong><br>
-                            <span>{{ activity.description }}</span>
-                        </div>
-                    </div>
-
-                    <a href="{{ activity.link }}" class="activity-link">Zum Objekt</a>
-                </li>
-            {% endfor %}
-        </ul>
-    {% else %}
-        <p>Noch keine Aktivitäten vorhanden.</p>
-    {% endif %}
+                        <a href="{{ activity.link }}" class="activity-link">Zum Objekt</a>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>Noch keine Aktivitäten vorhanden.</p>
+        {% endif %}
+    </div>
 </div>
 {% endblock %}

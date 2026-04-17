@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>E Mails</h1>
+        <p>Zentrale Kommunikationsübersicht mit automatischer Objekt Zuordnung.</p>
+    </div>
+</div>
+
+<div class="stats-grid stats-grid-four top-space-small">
+    <div class="stat-card stat-card-blue">
+        <span class="stat-label stat-label-light">Gesamt</span>
+        <strong class="stat-value stat-value-light">{{ email_counts.total }}</strong>
+    </div>
+
+    <div class="stat-card stat-card-orange">
+        <span class="stat-label stat-label-light">Neu</span>
+        <strong class="stat-value stat-value-light">{{ email_counts.new }}</strong>
+    </div>
+
+    <div class="stat-card stat-card-gray">
+        <span class="stat-label">Unzugeordnet</span>
+        <strong class="stat-value">{{ email_counts.unassigned }}</strong>
+    </div>
+
+    <div class="stat-card stat-card-green">
+        <span class="stat-label stat-label-light">Beantwortet</span>
+        <strong class="stat-value stat-value-light">{{ email_counts.answered }}</strong>
+    </div>
+</div>
+
+<div class="detail-grid top-space">
+    <div class="card glass-card">
+        <div class="section-header">
+            <h2>Filter</h2>
+        </div>
+
+        <form method="get" action="/emails">
+            <label for="search">Suche</label>
+            <input id="search" type="text" name="search" value="{{ search }}" placeholder="Absender, Betreff, Text, Objekt">
+
+            <label for="status">Status</label>
+            <select id="status" name="status">
+                <option value="">Alle Status</option>
+                {% for item in email_statuses %}
+                    <option value="{{ item }}" {% if status == item %}selected{% endif %}>{{ item }}</option>
+                {% endfor %}
+            </select>
+
+            <label for="mode">Ansicht</label>
+            <select id="mode" name="mode">
+                <option value="" {% if mode == '' %}selected{% endif %}>Alle</option>
+                <option value="assigned" {% if mode == 'assigned' %}selected{% endif %}>Nur zugeordnet</option>
+                <option value="unassigned" {% if mode == 'unassigned' %}selected{% endif %}>Nur unzugeordnet</option>
+            </select>
+
+            <button type="submit" class="button">Filtern</button>
+            <a href="/emails" class="button secondary">Zurücksetzen</a>
+        </form>
+    </div>
+
+    <div class="card glass-card">
+        <div class="section-header">
+            <h2>Test E Mail anlegen</h2>
+        </div>
+
+        {% if user.role != ROLE_READONLY %}
+        <form method="post" action="/emails/manual">
+            <label for="sender_name">Absender Name</label>
+            <input id="sender_name" type="text" name="sender_name" placeholder="z. B. Max Mustermann">
+
+            <label for="sender_email">Absender E Mail</label>
+            <input id="sender_email" type="email" name="sender_email" placeholder="z. B. max@beispiel.de">
+
+            <label for="subject">Betreff</label>
+            <input id="subject" type="text" name="subject" placeholder="z. B. Rückfrage zur Wohnung Maxstraße 22A">
+
+            <label for="body_text">Nachricht</label>
+            <textarea id="body_text" name="body_text" rows="6" placeholder="Nachrichtentext"></textarea>
+
+            <label for="status_create">Status</label>
+            <select id="status_create" name="status">
+                {% for item in email_statuses %}
+                    <option value="{{ item }}">{{ item }}</option>
+                {% endfor %}
+            </select>
+
+            <button type="submit" class="button">E Mail speichern</button>
+        </form>
+        {% else %}
+            <p>Mit der Rolle Nur Lesen können keine E Mails angelegt oder bearbeitet werden.</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card glass-card top-space">
+    <div class="section-header">
+        <h2>E Mail Liste</h2>
+    </div>
+
+    {% if emails %}
+        <div class="email-list">
+            {% for email in emails %}
+                <div class="email-card {% if email.status == 'neu' %}email-card-new{% endif %}">
+                    <div class="email-card-head">
+                        <div>
+                            <h3>{{ email.subject or 'Ohne Betreff' }}</h3>
+                            <p>
+                                Von:
+                                {% if email.sender_name %}{{ email.sender_name }}{% endif %}
+                                {% if email.sender_email %} ({{ email.sender_email }}){% endif %}
+                            </p>
+                            <p>{{ email.received_at.strftime('%d.%m.%Y %H:%M') }}</p>
+
+                            {% if email.building %}
+                                <p>Zugeordnet zu: {{ email.building.name }} • {{ email.building.address }}</p>
+                            {% else %}
+                                <p>Nicht zugeordnet</p>
+                            {% endif %}
+
+                            {% if email.matched_by %}
+                                <p>Erkannt über: {{ email.matched_by }}</p>
+                            {% endif %}
+                        </div>
+
+                        <div class="email-badge-group">
+                            <span class="email-badge email-badge-status">{{ email.status }}</span>
+                            <span class="email-badge email-badge-confidence">{{ email.assignment_confidence }}</span>
+                            {% if email.is_auto_assigned %}
+                                <span class="email-badge email-badge-auto">Auto</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="email-body-preview">{{ email.body_text }}</div>
+
+                    <div class="action-group top-space-small">
+                        {% if user.role != ROLE_READONLY %}
+                        <form method="post" action="/emails/{{ email.id }}/status">
+                            <input type="hidden" name="redirect_to" value="/emails">
+                            <select name="status">
+                                {% for item in email_statuses %}
+                                    <option value="{{ item }}" {% if email.status == item %}selected{% endif %}>{{ item }}</option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit" class="button small secondary">Status speichern</button>
+                        </form>
+
+                        {% if email.building %}
+                            <a href="/buildings/{{ email.building.id }}?tab=emails" class="button small secondary">Zum Objekt</a>
+
+                            <form method="post" action="/emails/{{ email.id }}/unassign">
+                                <input type="hidden" name="redirect_to" value="/emails">
+                                <button type="submit" class="button small danger">Zuordnung lösen</button>
+                            </form>
+                        {% else %}
+                            <form method="post" action="/emails/{{ email.id }}/assign">
+                                <input type="hidden" name="redirect_to" value="/emails">
+                                <select name="building_id" required>
+                                    <option value="">Objekt wählen</option>
+                                    {% for building in buildings %}
+                                        <option value="{{ building.id }}">{{ building.name }} • {{ building.address }}</option>
+                                    {% endfor %}
+                                </select>
+                                <button type="submit" class="button small">Zuordnen</button>
+                            </form>
+                        {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>Keine E Mails gefunden.</p>
+    {% endif %}
+</div>
+{% endblock %}

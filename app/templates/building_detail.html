@@ -7,6 +7,10 @@
         <p>{{ building.address }}</p>
 
         <div class="object-meta top-space-small">
+            <span>Status: {{ building.status }}</span>
+            {% if building.contact_person %}
+                <span>Ansprechpartner: {{ building.contact_person }}</span>
+            {% endif %}
             {% if building.landlord_name %}
                 <span>Vermieter: {{ building.landlord_name }}</span>
             {% endif %}
@@ -22,33 +26,74 @@
         </div>
     </div>
 
-    <a href="/buildings" class="button secondary">Zurück</a>
-</div>
+    <div class="action-group">
+        {% if user.role in [ROLE_OWNER, ROLE_MANAGER] %}
+        <a href="/buildings/{{ building.id }}/edit" class="button">Immobilie bearbeiten</a>
 
-<div class="stats-grid stats-grid-four">
-    <div class="stat-card">
-        <span class="stat-label">Dokumente</span>
-        <strong class="stat-value">{{ building.documents|length }}</strong>
-    </div>
+        <form method="post" action="/buildings/{{ building.id }}/delete" onsubmit="return confirm('Willst du diese Immobilie wirklich löschen? Alle zugehörigen Dokumente und Aufgaben werden ebenfalls gelöscht.');">
+            <button type="submit" class="button danger">Immobilie löschen</button>
+        </form>
+        {% endif %}
 
-    <div class="stat-card">
-        <span class="stat-label">Offene Aufgaben</span>
-        <strong class="stat-value">{{ open_tasks|length }}</strong>
-    </div>
-
-    <div class="stat-card">
-        <span class="stat-label">Erledigte Aufgaben</span>
-        <strong class="stat-value">{{ done_tasks|length }}</strong>
-    </div>
-
-    <div class="stat-card">
-        <span class="stat-label">Erstellt von</span>
-        <strong class="stat-value building-created-by">{{ building.created_by_user.username }}</strong>
+        <a href="/buildings" class="button secondary">Zurück</a>
     </div>
 </div>
 
+<div class="object-tabs top-space-small">
+    <a href="/buildings/{{ building.id }}?tab=overview" class="object-tab {% if active_tab == 'overview' %}active{% endif %}">Übersicht</a>
+    <a href="/buildings/{{ building.id }}?tab=documents" class="object-tab {% if active_tab == 'documents' %}active{% endif %}">Dokumente</a>
+    <a href="/buildings/{{ building.id }}?tab=tasks" class="object-tab {% if active_tab == 'tasks' %}active{% endif %}">Aufgaben</a>
+    <a href="/buildings/{{ building.id }}?tab=emails" class="object-tab {% if active_tab == 'emails' %}active{% endif %}">E Mails</a>
+</div>
+
+{% if active_tab == "overview" %}
 <div class="detail-grid top-space">
-    <div class="card">
+    <div class="card glass-card">
+        <div class="section-header">
+            <h2>Interne Informationen</h2>
+        </div>
+
+        <p><strong>Gebäude Notizen:</strong></p>
+        <p>{{ building.notes or 'Keine Notizen hinterlegt.' }}</p>
+
+        <p class="top-space-small"><strong>Interne Objektbeschreibung:</strong></p>
+        <p>{{ building.internal_description or 'Keine interne Beschreibung hinterlegt.' }}</p>
+    </div>
+
+    <div class="card glass-card">
+        <div class="section-header">
+            <h2>Objekt Kennzahlen</h2>
+        </div>
+
+        <div class="stats-grid stats-grid-two">
+            <div class="mini-stat-card">
+                <span class="mini-stat-label">Dokumente</span>
+                <strong class="mini-stat-value">{{ building.documents|length }}</strong>
+            </div>
+            <div class="mini-stat-card">
+                <span class="mini-stat-label">Offene Aufgaben</span>
+                <strong class="mini-stat-value">{{ open_tasks|length }}</strong>
+            </div>
+            <div class="mini-stat-card">
+                <span class="mini-stat-label">Erledigte Aufgaben</span>
+                <strong class="mini-stat-value">{{ done_tasks|length }}</strong>
+            </div>
+            <div class="mini-stat-card">
+                <span class="mini-stat-label">E Mails</span>
+                <strong class="mini-stat-value">{{ building_emails|length }}</strong>
+            </div>
+        </div>
+
+        <div class="top-space-small">
+            <p><strong>Erstellt von:</strong> {{ building.created_by_user.username }}</p>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if active_tab == "documents" %}
+<div class="detail-grid top-space">
+    <div class="card glass-card">
         <div class="section-header">
             <h2>Dokument hochladen</h2>
         </div>
@@ -59,9 +104,9 @@
 
             <label for="category">Kategorie</label>
             <select id="category" name="category" required>
-                <option value="Rechnung">Rechnung</option>
-                <option value="Vertrag">Vertrag</option>
-                <option value="Sonstiges">Sonstiges</option>
+                {% for item in document_categories %}
+                    <option value="{{ item }}">{{ item }}</option>
+                {% endfor %}
             </select>
 
             <label for="file">Datei</label>
@@ -72,9 +117,9 @@
         {% else %}
             <p>Mit der Rolle Nur Lesen können keine Dokumente hochgeladen werden.</p>
         {% endif %}
+    </div>
 
-        <hr>
-
+    <div class="card glass-card">
         <div class="section-header">
             <h2>Dokumente</h2>
         </div>
@@ -82,16 +127,20 @@
         {% if building.documents %}
             <div class="building-list">
                 {% for document in building.documents %}
-                    <div class="building-item">
+                    <div class="building-item task-card-line">
                         <div class="building-item-content">
-                            <h3>{{ document.original_filename }}</h3>
+                            <h3>{{ document.title or document.original_filename }}</h3>
+                            <p>Dateiname: {{ document.original_filename }}</p>
                             <p>Kategorie: {{ document.category }}</p>
+                            <p>Hochgeladen: {{ document.created_at.strftime('%d.%m.%Y %H:%M') }}</p>
                         </div>
 
                         <div class="action-group">
                             <a href="/documents/{{ document.id }}/download" class="button small secondary">Download</a>
 
                             {% if user.role in [ROLE_OWNER, ROLE_MANAGER] %}
+                            <a href="/documents/{{ document.id }}/edit" class="button small">Bearbeiten</a>
+
                             <form method="post" action="/documents/{{ document.id }}/delete">
                                 <input type="hidden" name="building_id" value="{{ building.id }}">
                                 <button type="submit" class="button small danger">Löschen</button>
@@ -105,8 +154,12 @@
             <p>Noch keine Dokumente vorhanden.</p>
         {% endif %}
     </div>
+</div>
+{% endif %}
 
-    <div class="card">
+{% if active_tab == "tasks" %}
+<div class="detail-grid top-space">
+    <div class="card glass-card">
         <div class="section-header">
             <h2>Aufgabe anlegen</h2>
         </div>
@@ -117,6 +170,13 @@
 
             <label for="title">Titel</label>
             <input id="title" type="text" name="title" required>
+
+            <label for="priority">Priorität</label>
+            <select id="priority" name="priority" required>
+                {% for item in task_priorities %}
+                    <option value="{{ item }}">{{ item|capitalize }}</option>
+                {% endfor %}
+            </select>
 
             <label for="note">Notiz</label>
             <textarea id="note" name="note" rows="4" placeholder="Was genau ist zu tun?"></textarea>
@@ -139,9 +199,9 @@
         {% else %}
             <p>Mit der Rolle Nur Lesen können keine Aufgaben angelegt werden.</p>
         {% endif %}
+    </div>
 
-        <hr>
-
+    <div class="card glass-card">
         <div class="section-header">
             <h2>Offene Aufgaben</h2>
         </div>
@@ -149,9 +209,12 @@
         {% if open_tasks %}
             <ul class="list">
                 {% for task in open_tasks %}
-                    <li class="task-item vertical-item {% if task.assigned_user_id == user.id %}assigned-highlight{% endif %}">
+                    {% set days_left = (task.due_date - current_date).days if task.due_date else none %}
+                    <li class="task-item vertical-item task-panel {% if task.assigned_user_id == user.id %}assigned-highlight{% endif %}">
                         <div class="list-main">
                             <strong>{{ task.title }}</strong><br>
+
+                            <span>Priorität: {{ task.priority|capitalize }}</span><br>
 
                             {% if task.note %}
                                 <span>Notiz: {{ task.note }}</span><br>
@@ -169,15 +232,34 @@
 
                             <span>
                                 {% if task.due_date %}
-                                    Fällig: {{ task.due_date }}
+                                    <span class="task-deadline {% if task.due_date < current_date %}red{% elif days_left is not none and days_left <= 7 %}orange{% endif %}">
+                                        Fällig: {{ task.due_date }}
+                                    </span>
                                 {% else %}
                                     Kein Fälligkeitsdatum
                                 {% endif %}
-                            </span>
+                            </span><br>
+
+                            {% if task.comments %}
+                                <div class="task-comments-preview top-space-small">
+                                    <strong>Kommentare</strong>
+                                    {% for comment in task.comments %}
+                                        <div class="comment-bubble">
+                                            <div class="comment-meta-line">
+                                                <span class="comment-author">{{ comment.user.username }}</span>
+                                                <span class="comment-date">{{ comment.created_at.strftime('%d.%m.%Y %H:%M') }}</span>
+                                            </div>
+                                            <p>{{ comment.text }}</p>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
                         </div>
 
-                        <div class="action-group">
+                        <div class="action-group vertical-action-group">
                             {% if user.role != ROLE_READONLY %}
+                            <a href="/tasks/{{ task.id }}/edit" class="button small secondary">Bearbeiten</a>
+
                             <form method="post" action="/tasks/{{ task.id }}/done">
                                 <input type="hidden" name="building_id" value="{{ building.id }}">
                                 <button type="submit" class="button small success">Erledigt</button>
@@ -188,6 +270,21 @@
                             <form method="post" action="/tasks/{{ task.id }}/delete">
                                 <input type="hidden" name="building_id" value="{{ building.id }}">
                                 <button type="submit" class="button small danger">Löschen</button>
+                            </form>
+                            {% endif %}
+
+                            {% if user.role in [ROLE_OWNER, ROLE_MANAGER] and task.assigned_user and task.assigned_user.email %}
+                            <form method="post" action="/tasks/{{ task.id }}/send-reminder">
+                                <button type="submit" class="button small secondary">E Mail Erinnerung</button>
+                            </form>
+                            {% endif %}
+                        </div>
+
+                        <div class="task-comment-form-wrap">
+                            {% if user.role != ROLE_READONLY %}
+                            <form method="post" action="/tasks/{{ task.id }}/comment" class="task-comment-form">
+                                <textarea name="text" rows="2" placeholder="Kommentar zur Aufgabe"></textarea>
+                                <button type="submit" class="button small">Kommentar speichern</button>
                             </form>
                             {% endif %}
                         </div>
@@ -207,9 +304,11 @@
         {% if done_tasks %}
             <ul class="list">
                 {% for task in done_tasks %}
-                    <li class="list-item {% if task.assigned_user_id == user.id %}assigned-highlight-soft{% endif %}">
+                    <li class="list-item task-panel-soft {% if task.assigned_user_id == user.id %}assigned-highlight-soft{% endif %}">
                         <div class="list-main">
                             <strong>{{ task.title }}</strong><br>
+
+                            <span>Priorität: {{ task.priority|capitalize }}</span><br>
 
                             {% if task.note %}
                                 <span>Notiz: {{ task.note }}</span><br>
@@ -226,12 +325,21 @@
                             <span>Status: erledigt</span>
                         </div>
 
-                        {% if user.role in [ROLE_OWNER, ROLE_MANAGER] %}
-                        <form method="post" action="/tasks/{{ task.id }}/delete">
-                            <input type="hidden" name="building_id" value="{{ building.id }}">
-                            <button type="submit" class="button small danger">Löschen</button>
-                        </form>
-                        {% endif %}
+                        <div class="action-group">
+                            {% if user.role != ROLE_READONLY %}
+                            <form method="post" action="/tasks/{{ task.id }}/reopen">
+                                <input type="hidden" name="building_id" value="{{ building.id }}">
+                                <button type="submit" class="button small secondary">Wieder öffnen</button>
+                            </form>
+                            {% endif %}
+
+                            {% if user.role in [ROLE_OWNER, ROLE_MANAGER] %}
+                            <form method="post" action="/tasks/{{ task.id }}/delete">
+                                <input type="hidden" name="building_id" value="{{ building.id }}">
+                                <button type="submit" class="button small danger">Löschen</button>
+                            </form>
+                            {% endif %}
+                        </div>
                     </li>
                 {% endfor %}
             </ul>
@@ -240,4 +348,60 @@
         {% endif %}
     </div>
 </div>
+{% endif %}
+
+{% if active_tab == "emails" %}
+<div class="card glass-card top-space">
+    <div class="section-header">
+        <h2>E Mail Verlauf zum Objekt</h2>
+        <a href="/emails?mode=assigned&search={{ building.name }}" class="button secondary small">Zentrale Ansicht</a>
+    </div>
+
+    {% if building_emails %}
+        <div class="email-list">
+            {% for email in building_emails %}
+                <div class="email-card {% if email.status == 'neu' %}email-card-new{% endif %}">
+                    <div class="email-card-head">
+                        <div>
+                            <h3>{{ email.subject or 'Ohne Betreff' }}</h3>
+                            <p>
+                                Von:
+                                {% if email.sender_name %}{{ email.sender_name }}{% endif %}
+                                {% if email.sender_email %} ({{ email.sender_email }}){% endif %}
+                            </p>
+                            <p>{{ email.received_at.strftime('%d.%m.%Y %H:%M') }}</p>
+                            {% if email.matched_by %}
+                                <p>Erkannt über: {{ email.matched_by }}</p>
+                            {% endif %}
+                        </div>
+
+                        <div class="email-badge-group">
+                            <span class="email-badge email-badge-status">{{ email.status }}</span>
+                            <span class="email-badge email-badge-confidence">{{ email.assignment_confidence }}</span>
+                        </div>
+                    </div>
+
+                    <div class="email-body-preview">{{ email.body_text }}</div>
+
+                    <div class="action-group top-space-small">
+                        {% if user.role != ROLE_READONLY %}
+                        <form method="post" action="/emails/{{ email.id }}/status">
+                            <input type="hidden" name="redirect_to" value="/buildings/{{ building.id }}?tab=emails">
+                            <select name="status">
+                                {% for item in email_statuses %}
+                                    <option value="{{ item }}" {% if email.status == item %}selected{% endif %}>{{ item }}</option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit" class="button small secondary">Status speichern</button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>Noch keine E Mails diesem Objekt zugeordnet.</p>
+    {% endif %}
+</div>
+{% endif %}
 {% endblock %}

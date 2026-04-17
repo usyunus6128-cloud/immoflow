@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Immobilie bearbeiten</h1>
+        <p>Ändere die Stammdaten des Objekts.</p>
+    </div>
+    <a href="/buildings/{{ building.id }}" class="button secondary">Zurück</a>
+</div>
+
+<div class="card narrow glass-card">
+    <form method="post" action="/buildings/{{ building.id }}/edit">
+        <label for="name">Objektname</label>
+        <input id="name" type="text" name="name" value="{{ building.name }}" required>
+
+        <label for="address">Adresse / Straße</label>
+        <input id="address" type="text" name="address" value="{{ building.address }}" required>
+
+        <label for="status">Objektstatus</label>
+        <select id="status" name="status" required>
+            {% for item in building_statuses %}
+                <option value="{{ item }}" {% if building.status == item %}selected{% endif %}>{{ item }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="contact_person">Ansprechpartner</label>
+        <input id="contact_person" type="text" name="contact_person" value="{{ building.contact_person or '' }}">
+
+        <label for="landlord_name">Vermieter</label>
+        <input id="landlord_name" type="text" name="landlord_name" value="{{ building.landlord_name or '' }}">
+
+        <label for="tenant_name">Mieter</label>
+        <input id="tenant_name" type="text" name="tenant_name" value="{{ building.tenant_name or '' }}">
+
+        <label for="tenant_email">Mieter E Mail</label>
+        <input id="tenant_email" type="email" name="tenant_email" value="{{ building.tenant_email or '' }}">
+
+        <label for="tenant_phone">Mieter Telefonnummer</label>
+        <input id="tenant_phone" type="text" name="tenant_phone" value="{{ building.tenant_phone or '' }}">
+
+        <label for="notes">Gebäude Notizen</label>
+        <textarea id="notes" name="notes" rows="4">{{ building.notes or '' }}</textarea>
+
+        <label for="internal_description">Interne Objektbeschreibung</label>
+        <textarea id="internal_description" name="internal_description" rows="5">{{ building.internal_description or '' }}</textarea>
+
+        <button type="submit" class="button">Änderungen speichern</button>
+    </form>
+</div>
+{% endblock %}
