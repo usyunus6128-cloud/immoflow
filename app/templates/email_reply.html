@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>E Mail beantworten</h1>
+        <p>
+            Antwort auf die Nachricht von
+            {{ email_message.sender_name or 'Unbekannt' }}
+            {% if email_message.sender_email %} ({{ email_message.sender_email }}){% endif %}
+        </p>
+    </div>
+
+    <div class="action-group">
+        {% if email_message.building_id %}
+            <a href="/buildings/{{ email_message.building_id }}?tab=emails" class="button secondary">Zurück zum Objekt</a>
+        {% else %}
+            <a href="/emails" class="button secondary">Zurück zu E Mails</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="detail-grid top-space">
+    <div class="card glass-card">
+        <div class="section-header">
+            <h2>Original E Mail</h2>
+        </div>
+
+        <div class="email-card">
+            <div class="email-card-head">
+                <div>
+                    <h3>{{ email_message.subject or "Ohne Betreff" }}</h3>
+                    <p>
+                        Von:
+                        {% if email_message.sender_name %}{{ email_message.sender_name }}{% endif %}
+                        {% if email_message.sender_email %} ({{ email_message.sender_email }}){% endif %}
+                    </p>
+                    <p>{{ email_message.received_at.strftime('%d.%m.%Y %H:%M') }}</p>
+
+                    {% if email_message.building %}
+                        <p>Zugeordnet zu: {{ email_message.building.name }} • {{ email_message.building.address }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="email-badge-group">
+                    <span class="email-badge email-badge-status">{{ email_message.status }}</span>
+                    <span class="email-badge email-badge-confidence">{{ email_message.assignment_confidence }}</span>
+                </div>
+            </div>
+
+            <div class="email-body-preview">{{ email_message.body_text }}</div>
+        </div>
+    </div>
+
+    <div class="card glass-card">
+        <div class="section-header">
+            <h2>Antwort schreiben</h2>
+        </div>
+
+        <form method="post" action="/emails/{{ email_message.id }}/reply">
+            <input type="hidden" name="redirect_to" value="{% if email_message.building_id %}/buildings/{{ email_message.building_id }}?tab=emails{% else %}/emails{% endif %}">
+
+            <label for="reply_text">Nachricht</label>
+            <textarea id="reply_text" name="reply_text" rows="14" placeholder="Deine Antwort..." required></textarea>
+
+            <button type="submit" class="button">Antwort senden</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

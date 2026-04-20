@@ -1,214 +1,324 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="page-header">
+<div class="page-header dashboard-page-header">
     <div>
         <h1>Dashboard</h1>
-        <p>Übersicht über Immobilien, Dokumente, Aufgaben und aktuelle Aktivität</p>
-    </div>
-    {% if user.role in ["Inhaber", "Objektmanager"] %}
-    <a href="/buildings/new" class="button">Neue Immobilie</a>
-    {% endif %}
-</div>
-
-<div class="quick-actions top-space-small">
-    <a href="/tasks?mine=1&open_only=1" class="quick-action-card">Meine offenen Aufgaben</a>
-    <a href="/tasks?overdue=1&open_only=1" class="quick-action-card">Überfällige Aufgaben</a>
-    <a href="/documents" class="quick-action-card">Dokumente verwalten</a>
-    <a href="/company" class="quick-action-card">Firma und Mitarbeiter</a>
-</div>
-
-{% if my_tasks %}
-<div class="card top-space dashboard-focus-card">
-    <div class="section-header">
-        <h2>Meine Aufgaben</h2>
+        <p>Klare Übersicht über Prioritäten, Aufgaben, Dokumente und Kommunikation</p>
     </div>
 
-    <ul class="list">
-        {% for item in my_tasks[:5] %}
-            <li class="list-item assigned-highlight task-card-line">
-                <div class="list-main">
-                    <strong>{{ item.task.title }}</strong><br>
-                    <span>{{ item.task.building.name }}</span><br>
-                    <span class="assigned-label">Mir zugewiesen</span><br>
-                    <span>Priorität: {{ item.task.priority|capitalize }}</span><br>
-                    {% if item.task.due_date %}
-                        <span class="task-deadline {% if item.priority_class == 'red' %}red{% elif item.priority_class == 'yellow' %}orange{% endif %}">
-                            Fällig: {{ item.task.due_date }}
-                        </span><br>
-                    {% endif %}
-                    <span>Status: {{ item.priority_text }}</span>
-                </div>
-
-                <a href="/buildings/{{ item.task.building.id }}" class="button secondary small">Zum Objekt</a>
-            </li>
-        {% endfor %}
-    </ul>
+    <div class="dashboard-header-actions">
+        {% if user.role in ["Inhaber", "Objektmanager"] %}
+        <a href="/buildings/new" class="button">Neue Immobilie</a>
+        {% endif %}
+        <a href="/tasks?mine=1&open_only=1" class="button secondary">Meine Aufgaben</a>
+    </div>
 </div>
-{% endif %}
 
-<div class="stats-grid stats-grid-four top-space">
+<div class="stats-grid stats-grid-four dashboard-stats-grid">
     <div class="stat-card stat-card-blue">
         <span class="stat-label stat-label-light">Dokumente</span>
         <strong class="stat-value stat-value-light">{{ total_documents }}</strong>
+        <span class="dashboard-stat-subtext">Alle Dateien im System</span>
     </div>
 
     <div class="stat-card stat-card-green">
-        <span class="stat-label stat-label-light">Aufgaben heute</span>
+        <span class="stat-label stat-label-light">Heute fällig</span>
         <strong class="stat-value stat-value-light">{{ today_tasks_count }}</strong>
+        <span class="dashboard-stat-subtext">Aufgaben mit heutiger Frist</span>
     </div>
 
     <div class="stat-card stat-card-orange">
-        <span class="stat-label stat-label-light">Diese Woche</span>
-        <strong class="stat-value stat-value-light">{{ week_tasks_count }}</strong>
+        <span class="stat-label stat-label-light">Überfällig</span>
+        <strong class="stat-value stat-value-light">{{ overdue_count }}</strong>
+        <span class="dashboard-stat-subtext">Direkter Handlungsbedarf</span>
     </div>
 
     <div class="stat-card stat-card-gray">
-        <span class="stat-label">Überfällige Aufgaben</span>
-        <strong class="stat-value">{{ overdue_count }}</strong>
+        <span class="stat-label">Neue E Mails</span>
+        <strong class="stat-value">{{ email_counts.new }}</strong>
+        <span class="dashboard-stat-subtext">Noch nicht beantwortet</span>
     </div>
 </div>
 
-<div class="dashboard-grid top-space">
-    <div class="card glass-card">
-        <div class="section-header">
-            <h2>Letzte Dokumente</h2>
+<div class="dashboard-priority-strip top-space-small">
+    <a href="/tasks?mine=1&open_only=1" class="priority-strip-card">
+        <span class="priority-strip-label">Mein Fokus</span>
+        <strong>Eigene offene Aufgaben prüfen</strong>
+        <small>Direkt zu deinen aktuellen Themen</small>
+    </a>
+
+    <a href="/tasks?overdue=1&open_only=1" class="priority-strip-card">
+        <span class="priority-strip-label">Sofort</span>
+        <strong>Überfällige Aufgaben ansehen</strong>
+        <small>Kritische Themen zuerst bearbeiten</small>
+    </a>
+
+    <a href="/emails?status=neu" class="priority-strip-card">
+        <span class="priority-strip-label">Kommunikation</span>
+        <strong>Neue E Mails prüfen</strong>
+        <small>Offene Rückmeldungen schnell erfassen</small>
+    </a>
+</div>
+
+{% if my_tasks %}
+<div class="card glass-card top-space dashboard-focus-section">
+    <div class="section-header">
+        <div>
+            <h2>Mein Fokus</h2>
+            <p class="section-subtitle">Deine wichtigsten offenen Aufgaben</p>
+        </div>
+        <a href="/tasks?mine=1&open_only=1" class="button secondary small">Alle meine Aufgaben</a>
+    </div>
+
+    <div class="focus-task-list">
+        {% for item in my_tasks[:4] %}
+            <div class="focus-task-card">
+                <div class="focus-task-main">
+                    <div class="focus-task-topline">
+                        <span class="focus-task-badge">Mir zugewiesen</span>
+                        <span class="focus-task-priority">{{ item.task.priority|capitalize }}</span>
+                    </div>
+
+                    <h3>{{ item.task.title }}</h3>
+                    <p>{{ item.task.building.name }}</p>
+
+                    {% if item.task.due_date %}
+                        <div class="focus-task-deadline {% if item.priority_class == 'red' %}is-red{% elif item.priority_class == 'yellow' %}is-yellow{% endif %}">
+                            Fällig: {{ item.task.due_date }}
+                        </div>
+                    {% else %}
+                        <div class="focus-task-deadline">
+                            Keine Frist hinterlegt
+                        </div>
+                    {% endif %}
+
+                    <div class="focus-task-status">
+                        {{ item.priority_text }}
+                    </div>
+                </div>
+
+                <div class="focus-task-actions">
+                    <a href="/buildings/{{ item.task.building.id }}?tab=tasks" class="button secondary small">Zum Objekt</a>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<div class="dashboard-main-grid top-space">
+    <div class="dashboard-main-column">
+        <div class="card glass-card">
+            <div class="section-header">
+                <div>
+                    <h2>Offene Aufgaben</h2>
+                    <p class="section-subtitle">Priorisiert nach Dringlichkeit</p>
+                </div>
+                <a href="/tasks?open_only=1" class="button secondary small">Alle Aufgaben</a>
+            </div>
+
+            {% if tasks_with_priority %}
+                <div class="dashboard-list">
+                    {% for item in tasks_with_priority[:6] %}
+                        <div class="dashboard-list-item {% if item.is_mine %}assigned-highlight{% endif %}">
+                            <div class="dashboard-list-main">
+                                <div class="dashboard-list-title-row">
+                                    <h3>{{ item.task.title }}</h3>
+
+                                    <span class="status-badge
+                                        {% if item.priority_text == 'Überfällig' %}
+                                            status-badge-red
+                                        {% elif item.priority_text == 'In den nächsten 3 Tagen fällig' %}
+                                            status-badge-red
+                                        {% elif item.priority_text == 'In 4 bis 7 Tagen fällig' %}
+                                            status-badge-orange
+                                        {% else %}
+                                            status-badge-green
+                                        {% endif %}
+                                    ">
+                                        {{ item.priority_text }}
+                                    </span>
+                                </div>
+
+                                <p>{{ item.task.building.name }}</p>
+
+                                <div class="dashboard-inline-meta">
+                                    <span>Priorität: {{ item.task.priority|capitalize }}</span>
+
+                                    {% if item.task.assigned_user %}
+                                        <span>Zugewiesen an: {{ item.task.assigned_user.username }}</span>
+                                    {% endif %}
+
+                                    {% if item.task.due_date %}
+                                        <span>Fällig: {{ item.task.due_date }}</span>
+                                    {% endif %}
+                                </div>
+
+                                {% if item.is_mine %}
+                                    <span class="assigned-label">Mir zugewiesen</span>
+                                {% endif %}
+                            </div>
+
+                            <div class="dashboard-list-actions">
+                                <a href="/buildings/{{ item.task.building.id }}?tab=tasks" class="button secondary small">Öffnen</a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
+    <p>Aktuell sind keine offenen Aufgaben vorhanden.</p>
+    <span>Hier siehst du priorisierte offene Aufgaben aus deinen Immobilien.</span>
+    <a href="/tasks?open_only=1" class="button small secondary top-space-small">Alle Aufgaben öffnen</a>
+</div>
+            {% endif %}
         </div>
 
-        {% if recent_documents %}
-            <div class="building-list">
-                {% for document in recent_documents %}
-                    <div class="building-item task-card-line">
-                        <div class="building-item-content">
+        <div class="card glass-card top-space">
+            <div class="section-header">
+                <div>
+                    <h2>Neue E Mails</h2>
+                    <p class="section-subtitle">Neu eingegangene oder noch offene Kommunikation</p>
+                </div>
+                <a href="/emails" class="button secondary small">Zur E Mail Übersicht</a>
+            </div>
+
+            {% if urgent_emails %}
+                <div class="email-list">
+                    {% for email in urgent_emails[:5] %}
+                        <div class="email-card {% if email.status == 'neu' %}email-card-new{% endif %}">
+                            <div class="email-card-head">
+                                <div>
+                                    <h3>{{ email.subject or 'Ohne Betreff' }}</h3>
+                                    <p>
+                                        Von:
+                                        {% if email.sender_name %}{{ email.sender_name }}{% endif %}
+                                        {% if email.sender_email %} ({{ email.sender_email }}){% endif %}
+                                    </p>
+
+                                    {% if email.building %}
+                                        <p>{{ email.building.name }} • {{ email.building.address }}</p>
+                                    {% else %}
+                                        <p>Nicht zugeordnet</p>
+                                    {% endif %}
+
+                                    <p>{{ email.received_at.strftime('%d.%m.%Y %H:%M') }}</p>
+                                </div>
+
+                                <div class="email-badge-group">
+                                    <span class="email-badge email-badge-status">{{ email.status }}</span>
+                                </div>
+                            </div>
+
+                            <div class="action-group top-space-small">
+                                <a href="/emails/{{ email.id }}" class="button small secondary">Details</a>
+                                {% if email.building %}
+                                <a href="/buildings/{{ email.building.id }}?tab=emails" class="button small secondary">Zum Objekt</a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
+    <p>Aktuell keine neuen E Mails.</p>
+    <span>Neue oder offene Kommunikation erscheint hier automatisch.</span>
+    <a href="/emails" class="button small secondary top-space-small">Zur E Mail Übersicht</a>
+</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="dashboard-side-column">
+        <div class="card glass-card">
+            <div class="section-header">
+                <div>
+                    <h2>Letzte Dokumente</h2>
+                    <p class="section-subtitle">Zuletzt hinzugefügte Unterlagen</p>
+                </div>
+                <a href="/documents" class="button secondary small">Alle Dokumente</a>
+            </div>
+
+            {% if recent_documents %}
+                <div class="dashboard-doc-list">
+                    {% for document in recent_documents %}
+                        <a href="{{ document.link }}" class="dashboard-doc-card">
+                            <div class="dashboard-doc-meta">
+                                <span class="dashboard-doc-category">{{ document.category }}</span>
+                            </div>
                             <h3>{{ document.title }}</h3>
                             <p>{{ document.subtitle }}</p>
-                            <p>Kategorie: {{ document.category }}</p>
-                        </div>
-                        <a href="{{ document.link }}" class="button secondary">Öffnen</a>
-                    </div>
-                {% endfor %}
-            </div>
-        {% else %}
-            <p>Noch keine Dokumente vorhanden.</p>
-        {% endif %}
-    </div>
-
-    <div class="card glass-card">
-        <div class="section-header">
-            <h2>Offene Aufgaben</h2>
-        </div>
-
-        {% if tasks_with_priority %}
-            <ul class="list">
-                {% for item in tasks_with_priority[:5] %}
-                    <li class="list-item {% if item.is_mine %}assigned-highlight{% endif %} task-card-line">
-                        <div class="list-main">
-                            <strong>{{ item.task.title }}</strong><br>
-                            <span>{{ item.task.building.name }}</span><br>
-                            <span>Priorität: {{ item.task.priority|capitalize }}</span><br>
-                            {% if item.task.assigned_user %}
-                                <span>Zugewiesen an: {{ item.task.assigned_user.username }}</span><br>
-                            {% endif %}
-                            {% if item.is_mine %}
-                                <span class="assigned-label">Mir zugewiesen</span><br>
-                            {% endif %}
-                            {% if item.task.due_date %}
-                                <span class="task-deadline {% if item.priority_class == 'red' %}red{% elif item.priority_class == 'yellow' %}orange{% endif %}">
-                                    Fällig: {{ item.task.due_date }}
-                                </span><br>
-                            {% endif %}
-                            <span>Status: {{ item.priority_text }}</span>
-                        </div>
-
-                        <div class="status-badge 
-                            {% if item.priority_text == 'Überfällig' %}
-                                status-badge-red
-                            {% elif item.priority_text == 'In den nächsten 3 Tagen fällig' %}
-                                status-badge-red
-                            {% elif item.priority_text == 'In 4 bis 7 Tagen fällig' %}
-                                status-badge-orange
-                            {% else %}
-                                status-badge-green
-                            {% endif %}
-                        ">
-                            {{ item.task.priority|capitalize }}
-                        </div>
-                    </li>
-                {% endfor %}
-            </ul>
-        {% else %}
-            <p>Keine offenen Aufgaben vorhanden.</p>
-        {% endif %}
-    </div>
+                        </a>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
+    <p>Noch keine Dokumente vorhanden.</p>
+    <span>Zuletzt hochgeladene Unterlagen aus deinen Objekten werden hier angezeigt.</span>
+    <a href="/documents" class="button small secondary top-space-small">Zu den Dokumenten</a>
 </div>
-
-<div class="dashboard-grid top-space">
-    <div class="card glass-card">
-        <div class="section-header">
-            <h2>Letzte Kommentare</h2>
+            {% endif %}
         </div>
 
-        {% if recent_comments %}
-            <div class="comment-feed">
-                {% for comment in recent_comments %}
-                    <div class="comment-feed-item">
-                        <div class="comment-feed-meta">
-                            <strong>{{ comment.user.username }}</strong>
-                            <span>{{ comment.created_at.strftime('%d.%m.%Y %H:%M') }}</span>
-                        </div>
-                        <div class="comment-feed-task">
-                            Aufgabe: {{ comment.task.title }}
-                        </div>
-                        <p>{{ comment.text }}</p>
-                    </div>
-                {% endfor %}
+        <div class="card glass-card top-space">
+            <div class="section-header">
+                <div>
+                    <h2>Letzte Aktivitäten</h2>
+                    <p class="section-subtitle">Was zuletzt im System passiert ist</p>
+                </div>
             </div>
-        {% else %}
-            <p>Noch keine Kommentare vorhanden.</p>
-        {% endif %}
+
+            <div class="card glass-card top-space">
+    <div class="section-header">
+        <div>
+            <h2>Letzte Aktivitäten</h2>
+            <p class="section-subtitle">Was zuletzt im System passiert ist</p>
+        </div>
     </div>
 
-    <div class="card glass-card">
-        <div class="section-header">
-            <h2>Letzte Aktivitäten</h2>
+    {% if recent_activities %}
+        <div class="activity-feed-compact">
+            {% for activity in recent_activities[:6] %}
+                <div class="activity-feed-row">
+                    <div class="activity-icon
+                        {% if activity.type == 'document' %}
+                            activity-icon-blue
+                        {% elif activity.type == 'done_task' %}
+                            activity-icon-green
+                        {% elif activity.type == 'email' %}
+                            activity-icon-blue
+                        {% else %}
+                            activity-icon-orange
+                        {% endif %}
+                    ">
+                        {% if activity.type == 'document' %}
+                            D
+                        {% elif activity.type == 'done_task' %}
+                            ✓
+                        {% elif activity.type == 'email' %}
+                            E
+                        {% else %}
+                            A
+                        {% endif %}
+                    </div>
+
+                    <div class="activity-feed-main">
+                        <strong>{{ activity.title }}</strong>
+                        <p>{{ activity.description }}</p>
+                    </div>
+
+                    <a href="{{ activity.link }}" class="activity-link">Öffnen</a>
+                </div>
+            {% endfor %}
         </div>
-
-        {% if recent_activities %}
-            <ul class="list">
-                {% for activity in recent_activities %}
-                    <li class="list-item task-card-line">
-                        <div class="activity-row">
-                            <div class="activity-icon
-                                {% if activity.type == 'document' %}
-                                    activity-icon-blue
-                                {% elif activity.type == 'done_task' %}
-                                    activity-icon-green
-                                {% else %}
-                                    activity-icon-orange
-                                {% endif %}
-                            ">
-                                {% if activity.type == 'document' %}
-                                    D
-                                {% elif activity.type == 'done_task' %}
-                                    ✓
-                                {% else %}
-                                    A
-                                {% endif %}
-                            </div>
-
-                            <div class="list-main">
-                                <strong>{{ activity.title }}</strong><br>
-                                <span>{{ activity.description }}</span>
-                            </div>
-                        </div>
-
-                        <a href="{{ activity.link }}" class="activity-link">Zum Objekt</a>
-                    </li>
-                {% endfor %}
-            </ul>
-        {% else %}
+    {% else %}
+        <div class="empty-state">
             <p>Noch keine Aktivitäten vorhanden.</p>
-        {% endif %}
+            <span>Hier erscheinen später Dokumente, Aufgaben und E Mail Vorgänge.</span>
+        </div>
+    {% endif %}
+</div>
     </div>
 </div>
 {% endblock %}

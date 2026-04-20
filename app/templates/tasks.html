@@ -53,7 +53,7 @@
 
             <label class="filter-check">
                 <input type="checkbox" name="low_priority" value="1" {% if low_priority %}checked{% endif %}>
-                <span>Priorität status</span>
+                <span>Priorität niedrig</span>
             </label>
         </div>
 
@@ -77,6 +77,9 @@
                         <strong>{{ item.task.title }}</strong><br>
                         <span>Objekt: {{ item.building.name }}</span><br>
                         <span>Priorität: {{ item.task.priority|capitalize }}</span><br>
+                        {% if item.task.recurrence %}
+                            <span>Wiederholung: {{ item.task.recurrence }}</span><br>
+                        {% endif %}
                         {% if item.task.assigned_user %}
                             <span>Zugewiesen an: {{ item.task.assigned_user.username }}</span><br>
                         {% endif %}
@@ -96,7 +99,7 @@
 
                     <div class="action-group">
                         <a href="/tasks/{{ item.task.id }}/edit" class="button secondary small">Bearbeiten</a>
-                        <a href="/buildings/{{ item.building.id }}" class="button secondary small">Zum Objekt</a>
+                        <a href="/buildings/{{ item.building.id }}?tab=tasks" class="button secondary small">Zum Objekt</a>
                     </div>
                 </li>
             {% endfor %}
@@ -119,6 +122,9 @@
                         <strong>{{ item.task.title }}</strong><br>
                         <span>Objekt: {{ item.building.name }}</span><br>
                         <span>Priorität: {{ item.task.priority|capitalize }}</span><br>
+                        {% if item.task.recurrence %}
+                            <span>Wiederholung: {{ item.task.recurrence }}</span><br>
+                        {% endif %}
                         {% if item.task.assigned_user %}
                             <span>Zugewiesen an: {{ item.task.assigned_user.username }}</span><br>
                         {% endif %}
@@ -132,7 +138,7 @@
                     </div>
 
                     <div class="action-group">
-                        <a href="/buildings/{{ item.building.id }}" class="button secondary small">Zum Objekt</a>
+                        <a href="/buildings/{{ item.building.id }}?tab=tasks" class="button secondary small">Zum Objekt</a>
                     </div>
                 </li>
             {% endfor %}

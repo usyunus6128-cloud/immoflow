@@ -136,7 +136,11 @@
                     <div class="email-body-preview">{{ email.body_text }}</div>
 
                     <div class="action-group top-space-small">
+                        <a href="/emails/{{ email.id }}" class="button small secondary">Details</a>
+
                         {% if user.role != ROLE_READONLY %}
+                        <a href="/emails/{{ email.id }}/reply" class="button small">Antworten</a>
+
                         <form method="post" action="/emails/{{ email.id }}/status">
                             <input type="hidden" name="redirect_to" value="/emails">
                             <select name="status">

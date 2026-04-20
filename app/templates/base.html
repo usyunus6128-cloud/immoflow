@@ -10,42 +10,52 @@
 <div class="app-layout">
     <aside class="sidebar">
         <div class="sidebar-top">
-            <div class="sidebar-brand">
-                <div class="sidebar-logo">ImmoControl</div>
-                <p class="sidebar-subtitle">Klar. Modern. Teamfähig.</p>
+            <div class="sidebar-brand-card">
+                <div class="sidebar-logo-wrap">
+                    <div class="sidebar-logo-icon">IC</div>
+                    <div>
+                        <div class="sidebar-logo">ImmoControl</div>
+                        <p class="sidebar-subtitle">Klar. Modern. Teamfähig.</p>
+                    </div>
+                </div>
             </div>
+
+            <div class="sidebar-section-label">Navigation</div>
 
             <nav class="sidebar-nav">
                 <a href="/" class="nav-item {% if request.url.path == '/' %}active{% endif %}">
+                    <span class="nav-icon">⌂</span>
                     <span class="nav-text">Dashboard</span>
                 </a>
 
                 <a href="/buildings" class="nav-item {% if request.url.path == '/buildings' %}active{% endif %}">
+                    <span class="nav-icon">🏢</span>
                     <span class="nav-text">Immobilien</span>
                 </a>
 
                 <a href="/tasks" class="nav-item {% if request.url.path == '/tasks' %}active{% endif %}">
+                    <span class="nav-icon">✓</span>
                     <span class="nav-text">Aufgaben</span>
                 </a>
 
                 <a href="/documents" class="nav-item {% if request.url.path == '/documents' %}active{% endif %}">
+                    <span class="nav-icon">📄</span>
                     <span class="nav-text">Dokumente</span>
                 </a>
 
                 <a href="/emails" class="nav-item {% if request.url.path == '/emails' %}active{% endif %}">
+                    <span class="nav-icon">✉</span>
                     <span class="nav-text">E Mails</span>
                 </a>
 
                 <a href="/company" class="nav-item {% if request.url.path == '/company' %}active{% endif %}">
+                    <span class="nav-icon">▣</span>
                     <span class="nav-text">Firma</span>
                 </a>
 
-                <a href="/settings" class="nav-item {% if request.url.path == '/settings' %}active{% endif %}">
-                    <span class="nav-text">Einstellungen</span>
-                </a>
-
                 {% if user and user.role in ["Inhaber", "Objektmanager"] %}
-                <a href="/buildings/new" class="nav-item {% if request.url.path == '/buildings/new' %}active{% endif %}">
+                <a href="/buildings/new" class="nav-item nav-item-accent {% if request.url.path == '/buildings/new' %}active{% endif %}">
+                    <span class="nav-icon">＋</span>
                     <span class="nav-text">Neue Immobilie</span>
                 </a>
                 {% endif %}
@@ -54,13 +64,30 @@
 
         {% if user %}
         <div class="sidebar-footer">
-            <div class="sidebar-user">
-                <span class="sidebar-user-label">Eingeloggt als</span>
-                <strong>{{ user.username }}</strong>
-                <div class="sidebar-company-name">{{ user.company.name }}</div>
-                <div class="sidebar-role-name">{{ user.role }}</div>
+            <div class="sidebar-user-card">
+                <div class="sidebar-user-avatar">
+                    {{ user.username[:1]|upper }}
+                </div>
+
+                <div class="sidebar-user-info">
+                    <span class="sidebar-user-label">Eingeloggt als</span>
+                    <strong>{{ user.username }}</strong>
+                    <div class="sidebar-company-name">{{ user.company.name }}</div>
+                    <div class="sidebar-role-name">{{ user.role }}</div>
+                </div>
             </div>
-            <a href="/logout" class="button secondary sidebar-logout">Logout</a>
+
+            <div class="sidebar-footer-links">
+                <a href="/settings" class="footer-link {% if request.url.path == '/settings' %}active{% endif %}">
+                    <span class="footer-link-icon">⚙</span>
+                    <span>Einstellungen</span>
+                </a>
+
+                <a href="/logout" class="footer-link footer-link-logout">
+                    <span class="footer-link-icon">↪</span>
+                    <span>Logout</span>
+                </a>
+            </div>
         </div>
         {% endif %}
     </aside>
@@ -89,6 +116,13 @@
                         ImmoControl
                     {% endif %}
                 </div>
+
+                {% if user %}
+                <form method="get" action="/search" class="global-search-form">
+                    <input type="text" name="q" placeholder="Global suchen">
+                    <button type="submit" class="button small">Suchen</button>
+                </form>
+                {% endif %}
             </div>
         </header>
 
@@ -97,5 +131,12 @@
         </main>
     </div>
 </div>
+
+<script>
+(function () {
+    const savedTheme = localStorage.getItem("immocontrol_theme") || "dark";
+    document.body.setAttribute("data-theme", savedTheme);
+})();
+</script>
 </body>
 </html>

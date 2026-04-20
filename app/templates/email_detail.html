@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>E Mail Details</h1>
+        <p>
+            {{ email_message.subject or "Ohne Betreff" }}
+        </p>
+    </div>
+
+    <div class="action-group">
+        {% if email_message.building_id %}
+            <a href="/buildings/{{ email_message.building_id }}?tab=emails" class="button secondary">Zum Objekt</a>
+        {% endif %}
+        <a href="/emails" class="button secondary">Zurück zu E Mails</a>
+    </div>
+</div>
+
+<div class="detail-grid top-space">
+    <div class="card glass-card">
+        <div class="section-header">
+            <h2>Nachricht</h2>
+        </div>
+
+        <div class="email-card">
+            <div class="email-card-head">
+                <div>
+                    <h3>{{ email_message.subject or "Ohne Betreff" }}</h3>
+                    <p>
+                        Von:
+                        {% if email_message.sender_name %}{{ email_message.sender_name }}{% endif %}
+                        {% if email_message.sender_email %} ({{ email_message.sender_email }}){% endif %}
+                    </p>
+                    <p>{{ email_message.received_at.strftime('%d.%m.%Y %H:%M') }}</p>
+                    <p>Richtung: {{ email_message.direction }}</p>
+
+                    {% if email_message.building %}
+                        <p>Zugeordnet zu: {{ email_message.building.name }} • {{ email_message.building.address }}</p>
+                    {% else %}
+                        <p>Nicht zugeordnet</p>
+                    {% endif %}
+
+                    {% if email_message.matched_by %}
+                        <p>Erkannt über: {{ email_message.matched_by }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="email-badge-group">
+                    <span class="email-badge email-badge-status">{{ email_message.status }}</span>
+                    <span class="email-badge email-badge-confidence">{{ email_message.assignment_confidence }}</span>
+                    {% if email_message.is_auto_assigned %}
+                        <span class="email-badge email-badge-auto">Auto</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="email-body-preview">{{ email_message.body_text }}</div>
+
+            <div class="action-group top-space-small">
+                {% if user.role != ROLE_READONLY %}
+                <a href="/emails/{{ email_message.id }}/reply" class="button small">Antworten</a>
+
+                <form method="post" action="/emails/{{ email_message.id }}/status">
+                    <input type="hidden" name="redirect_to" value="/emails/{{ email_message.id }}">
+                    <select name="status">
+                        {% for item in email_statuses %}
+                            <option value="{{ item }}" {% if email_message.status == item %}selected{% endif %}>{{ item }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="button small secondary">Status speichern</button>
+                </form>
+
+                {% if email_message.building %}
+                    <form method="post" action="/emails/{{ email_message.id }}/unassign">
+                        <input type="hidden" name="redirect_to" value="/emails/{{ email_message.id }}">
+                        <button type="submit" class="button small danger">Zuordnung lösen</button>
+                    </form>
+                {% else %}
+                    <form method="post" action="/emails/{{ email_message.id }}/assign">
+                        <input type="hidden" name="redirect_to" value="/emails/{{ email_message.id }}">
+                        <select name="building_id" required>
+                            <option value="">Objekt wählen</option>
+                            {% for building in buildings %}
+                                <option value="{{ building.id }}">{{ building.name }} • {{ building.address }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit" class="button small">Zuordnen</button>
+                    </form>
+                {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="card glass-card">
+        <div class="section-header">
+            <h2>Interne Notizen</h2>
+        </div>
+
+        {% if user.role != ROLE_READONLY %}
+        <form method="post" action="/emails/{{ email_message.id }}/notes">
+            <input type="hidden" name="redirect_to" value="/emails/{{ email_message.id }}">
+
+            <label for="text">Neue Notiz</label>
+            <textarea id="text" name="text" rows="5" placeholder="Interne Notiz zur E Mail"></textarea>
+
+            <button type="submit" class="button">Notiz speichern</button>
+        </form>
+        {% endif %}
+
+        <div class="top-space">
+            {% if internal_notes %}
+                <div class="comment-feed">
+                    {% for note in internal_notes %}
+                        <div class="comment-feed-item">
+                            <div class="comment-feed-meta">
+                                <strong>{{ note.user.username }}</strong>
+                                <span>{{ note.created_at.strftime('%d.%m.%Y %H:%M') }}</span>
+                            </div>
+                            <p>{{ note.text }}</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p>Noch keine internen Notizen vorhanden.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="card glass-card top-space">
+    <div class="section-header">
+        <h2>Verlauf dieser Unterhaltung</h2>
+    </div>
+
+    {% if thread_messages %}
+        <div class="email-list">
+            {% for item in thread_messages %}
+                <div class="email-card">
+                    <div class="email-card-head">
+                        <div>
+                            <h3>{{ item.subject or "Ohne Betreff" }}</h3>
+                            <p>
+                                {% if item.direction == "ausgehend" %}
+                                    Gesendet von:
+                                {% else %}
+                                    Von:
+                                {% endif %}
+                                {% if item.sender_name %}{{ item.sender_name }}{% endif %}
+                                {% if item.sender_email %} ({{ item.sender_email }}){% endif %}
+                            </p>
+                            <p>{{ item.received_at.strftime('%d.%m.%Y %H:%M') }}</p>
+                        </div>
+
+                        <div class="email-badge-group">
+                            <span class="email-badge email-badge-status">{{ item.status }}</span>
+                        </div>
+                    </div>
+
+                    <div class="email-body-preview">{{ item.body_text }}</div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>Kein weiterer Verlauf vorhanden.</p>
+    {% endif %}
+</div>
+{% endblock %}

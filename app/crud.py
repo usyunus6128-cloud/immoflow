@@ -4,7 +4,8 @@ from datetime import date, datetime, timedelta
 from typing import Optional
 
 from sqlalchemy import or_
-from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session, joinedload
 from passlib.context import CryptContext
 
 from app import models
@@ -21,11 +22,19 @@ def verify_password(password: str, password_hash: str):
 
 
 def get_company_by_name(db: Session, company_name: str):
-    return db.query(models.Company).filter(models.Company.name == company_name).first()
+    return (
+        db.query(models.Company)
+        .filter(models.Company.name == company_name)
+        .first()
+    )
 
 
 def get_company_by_id(db: Session, company_id: int):
-    return db.query(models.Company).filter(models.Company.id == company_id).first()
+    return (
+        db.query(models.Company)
+        .filter(models.Company.id == company_id)
+        .first()
+    )
 
 
 def create_company(
@@ -42,7 +51,11 @@ def create_company(
         address=address
     )
     db.add(company)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        return None
     db.refresh(company)
     return company
 
@@ -64,20 +77,34 @@ def update_company(
     company.phone = phone
     company.address = address
 
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        return None
+
     db.refresh(company)
     return company
 
 
 def get_user_by_username(db: Session, username: str, company_id: int):
-    return db.query(models.User).filter(
-        models.User.username == username,
-        models.User.company_id == company_id
-    ).first()
+    return (
+        db.query(models.User)
+        .filter(
+            models.User.username == username,
+            models.User.company_id == company_id
+        )
+        .first()
+    )
 
 
 def get_user_by_id(db: Session, user_id: int):
-    return db.query(models.User).filter(models.User.id == user_id).first()
+    return (
+        db.query(models.User)
+        .options(joinedload(models.User.company))
+        .filter(models.User.id == user_id)
+        .first()
+    )
 
 
 def get_company_users(db: Session, company_id: int):
@@ -118,7 +145,11 @@ def create_user(
         status="aktiv"
     )
     db.add(user)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        return None
     db.refresh(user)
     return user
 
@@ -126,7 +157,10 @@ def create_user(
 def update_user_role(db: Session, user_id: int, company_id: int, new_role: str):
     user = (
         db.query(models.User)
-        .filter(models.User.id == user_id, models.User.company_id == company_id)
+        .filter(
+            models.User.id == user_id,
+            models.User.company_id == company_id
+        )
         .first()
     )
     if not user:
@@ -141,7 +175,10 @@ def update_user_role(db: Session, user_id: int, company_id: int, new_role: str):
 def update_user_status(db: Session, user_id: int, company_id: int, new_status: str):
     user = (
         db.query(models.User)
-        .filter(models.User.id == user_id, models.User.company_id == company_id)
+        .filter(
+            models.User.id == user_id,
+            models.User.company_id == company_id
+        )
         .first()
     )
     if not user:
@@ -183,7 +220,16 @@ def authenticate_user(db: Session, company_name: str, username: str, password: s
 
 
 def get_all_buildings(db: Session, company_id: int, search: str = ""):
-    query = db.query(models.Building).filter(models.Building.company_id == company_id)
+    query = (
+        db.query(models.Building)
+        .options(
+            joinedload(models.Building.documents),
+            joinedload(models.Building.tasks),
+            joinedload(models.Building.emails),
+            joinedload(models.Building.created_by_user),
+        )
+        .filter(models.Building.company_id == company_id)
+    )
 
     if search:
         search_term = f"%{search}%"
@@ -208,6 +254,13 @@ def get_all_buildings(db: Session, company_id: int, search: str = ""):
 def get_building_by_id(db: Session, building_id: int, company_id: int):
     return (
         db.query(models.Building)
+        .options(
+            joinedload(models.Building.documents),
+            joinedload(models.Building.tasks).joinedload(models.Task.assigned_user),
+            joinedload(models.Building.tasks).joinedload(models.Task.comments).joinedload(models.TaskComment.user),
+            joinedload(models.Building.emails),
+            joinedload(models.Building.created_by_user),
+        )
         .filter(
             models.Building.id == building_id,
             models.Building.company_id == company_id
@@ -293,7 +346,10 @@ def delete_building(db: Session, building_id: int, company_id: int):
 
     for document in building.documents:
         if document.filepath and os.path.exists(document.filepath):
-            os.remove(document.filepath)
+            try:
+                os.remove(document.filepath)
+            except OSError:
+                pass
 
     db.delete(building)
     db.commit()
@@ -327,6 +383,7 @@ def get_document_by_id(db: Session, document_id: int, company_id: int):
     return (
         db.query(models.Document)
         .join(models.Building)
+        .options(joinedload(models.Document.building))
         .filter(
             models.Document.id == document_id,
             models.Building.company_id == company_id
@@ -358,8 +415,11 @@ def delete_document(db: Session, document_id: int, company_id: int):
     if not document:
         return None
 
-    if os.path.exists(document.filepath):
-        os.remove(document.filepath)
+    if document.filepath and os.path.exists(document.filepath):
+        try:
+            os.remove(document.filepath)
+        except OSError:
+            pass
 
     db.delete(document)
     db.commit()
@@ -373,7 +433,9 @@ def create_task(
     due_date,
     building_id: int,
     assigned_user_id=None,
-    priority: str = "mittel"
+    priority: str = "mittel",
+    recurrence: str = "",
+    parent_task_id: Optional[int] = None
 ):
     task = models.Task(
         title=title,
@@ -382,7 +444,9 @@ def create_task(
         status="offen",
         building_id=building_id,
         assigned_user_id=assigned_user_id,
-        priority=priority
+        priority=priority,
+        recurrence=recurrence or None,
+        parent_task_id=parent_task_id
     )
     db.add(task)
     db.commit()
@@ -394,6 +458,12 @@ def get_task_by_id(db: Session, task_id: int, company_id: int):
     return (
         db.query(models.Task)
         .join(models.Building)
+        .options(
+            joinedload(models.Task.building),
+            joinedload(models.Task.assigned_user),
+            joinedload(models.Task.comments).joinedload(models.TaskComment.user),
+            joinedload(models.Task.follow_up_tasks),
+        )
         .filter(
             models.Task.id == task_id,
             models.Building.company_id == company_id
@@ -410,7 +480,8 @@ def update_task(
     note: str,
     due_date,
     assigned_user_id,
-    priority: str
+    priority: str,
+    recurrence: str = ""
 ):
     task = get_task_by_id(db, task_id, company_id)
     if not task:
@@ -421,6 +492,7 @@ def update_task(
     task.due_date = due_date
     task.assigned_user_id = assigned_user_id
     task.priority = priority
+    task.recurrence = recurrence or None
 
     db.commit()
     db.refresh(task)
@@ -482,6 +554,10 @@ def get_open_tasks_sorted(db: Session, company_id: int):
     tasks = (
         db.query(models.Task)
         .join(models.Building)
+        .options(
+            joinedload(models.Task.building),
+            joinedload(models.Task.assigned_user),
+        )
         .filter(
             models.Task.status == "offen",
             models.Building.company_id == company_id
@@ -546,7 +622,7 @@ def get_week_tasks_count(db: Session, company_id: int):
         .filter(
             models.Building.company_id == company_id,
             models.Task.status == "offen",
-            models.Task.due_date is not None,
+            models.Task.due_date.is_not(None),
             models.Task.due_date >= today,
             models.Task.due_date <= week_end
         )
@@ -559,12 +635,68 @@ def get_recent_comments_for_company(db: Session, company_id: int, limit: int = 5
         db.query(models.TaskComment)
         .join(models.Task)
         .join(models.Building)
+        .options(
+            joinedload(models.TaskComment.user),
+            joinedload(models.TaskComment.task),
+        )
         .filter(models.Building.company_id == company_id)
         .order_by(models.TaskComment.created_at.desc())
         .limit(limit)
         .all()
     )
     return comments
+
+
+def get_due_recurring_tasks(db: Session, company_id: int):
+    return (
+        db.query(models.Task)
+        .join(models.Building)
+        .filter(
+            models.Building.company_id == company_id,
+            models.Task.recurrence.is_not(None),
+            models.Task.recurrence != ""
+        )
+        .all()
+    )
+
+
+def create_next_recurring_task_if_needed(db: Session, task_id: int, company_id: int):
+    task = get_task_by_id(db, task_id, company_id)
+    if not task:
+        return None
+
+    if not task.recurrence:
+        return None
+
+    if task.status != "erledigt":
+        return None
+
+    if task.follow_up_tasks:
+        return task.follow_up_tasks[0]
+
+    if not task.due_date:
+        return None
+
+    if task.recurrence == "täglich":
+        new_due_date = task.due_date + timedelta(days=1)
+    elif task.recurrence == "wöchentlich":
+        new_due_date = task.due_date + timedelta(days=7)
+    elif task.recurrence == "monatlich":
+        new_due_date = task.due_date + timedelta(days=30)
+    else:
+        return None
+
+    return create_task(
+        db=db,
+        title=task.title,
+        note=task.note,
+        due_date=new_due_date,
+        building_id=task.building_id,
+        assigned_user_id=task.assigned_user_id,
+        priority=task.priority,
+        recurrence=task.recurrence,
+        parent_task_id=task.id
+    )
 
 
 def normalize_text(value: str) -> str:
@@ -588,6 +720,11 @@ def confidence_label_from_score(score: int) -> str:
 def get_email_by_id(db: Session, email_id: int, company_id: int):
     return (
         db.query(models.EmailMessage)
+        .options(
+            joinedload(models.EmailMessage.building),
+            joinedload(models.EmailMessage.company),
+            joinedload(models.EmailMessage.source_email),
+        )
         .filter(
             models.EmailMessage.id == email_id,
             models.EmailMessage.company_id == company_id
@@ -662,7 +799,8 @@ def create_email_message(
     assignment_confidence: str = "Unsicher erkannt",
     matched_by: str = "",
     thread_key: str = "",
-    external_message_id: str = ""
+    external_message_id: str = "",
+    source_email_id: Optional[int] = None
 ):
     assigned_building_id = building_id
     auto_assigned = is_auto_assigned
@@ -697,13 +835,114 @@ def create_email_message(
         assignment_confidence=confidence or "Unsicher erkannt",
         matched_by=match_reason or "",
         thread_key=thread_key or "",
-        external_message_id=external_message_id or ""
+        external_message_id=external_message_id or "",
+        source_email_id=source_email_id
     )
 
     db.add(email_message)
     db.commit()
     db.refresh(email_message)
     return email_message
+
+
+def create_email_reply(
+    db: Session,
+    source_email_id: int,
+    company_id: int,
+    sender_name: str,
+    sender_email: str,
+    subject: str,
+    body_text: str,
+    status: str = "beantwortet"
+):
+    source_email = get_email_by_id(db, source_email_id, company_id)
+    if not source_email:
+        return None
+
+    reply = create_email_message(
+        db=db,
+        company_id=company_id,
+        subject=subject,
+        sender_name=sender_name,
+        sender_email=sender_email,
+        body_text=body_text,
+        direction="ausgehend",
+        status=status,
+        received_at=datetime.utcnow(),
+        building_id=source_email.building_id,
+        is_auto_assigned=False,
+        assignment_confidence="Manuell erstellt",
+        matched_by="Antwort aus System",
+        thread_key=source_email.thread_key or str(source_email.id),
+        source_email_id=source_email.id
+    )
+
+    source_email.status = "beantwortet"
+    db.commit()
+    db.refresh(source_email)
+
+    return reply
+
+
+def get_email_thread_messages(db: Session, company_id: int, email_id: int):
+    email_message = get_email_by_id(db, email_id, company_id)
+    if not email_message:
+        return []
+
+    thread_key = (email_message.thread_key or "").strip()
+
+    if thread_key:
+        return (
+            db.query(models.EmailMessage)
+            .options(
+                joinedload(models.EmailMessage.building),
+                joinedload(models.EmailMessage.source_email),
+            )
+            .filter(
+                models.EmailMessage.company_id == company_id,
+                models.EmailMessage.thread_key == thread_key
+            )
+            .order_by(models.EmailMessage.received_at.asc())
+            .all()
+        )
+
+    collected_ids = {email_message.id}
+
+    if email_message.source_email_id:
+        collected_ids.add(email_message.source_email_id)
+
+    related = (
+        db.query(models.EmailMessage)
+        .filter(
+            models.EmailMessage.company_id == company_id,
+            or_(
+                models.EmailMessage.id == email_message.id,
+                models.EmailMessage.id == email_message.source_email_id,
+                models.EmailMessage.source_email_id == email_message.id
+            )
+        )
+        .order_by(models.EmailMessage.received_at.asc())
+        .all()
+    )
+
+    for item in related:
+        collected_ids.add(item.id)
+        if item.source_email_id:
+            collected_ids.add(item.source_email_id)
+
+    return (
+        db.query(models.EmailMessage)
+        .options(
+            joinedload(models.EmailMessage.building),
+            joinedload(models.EmailMessage.source_email),
+        )
+        .filter(
+            models.EmailMessage.company_id == company_id,
+            models.EmailMessage.id.in_(collected_ids)
+        )
+        .order_by(models.EmailMessage.received_at.asc())
+        .all()
+    )
 
 
 def get_company_emails(
@@ -717,6 +956,10 @@ def get_company_emails(
 ):
     query = (
         db.query(models.EmailMessage)
+        .options(
+            joinedload(models.EmailMessage.building),
+            joinedload(models.EmailMessage.source_email),
+        )
         .filter(models.EmailMessage.company_id == company_id)
     )
 
@@ -748,6 +991,7 @@ def get_company_emails(
                 email.body_text or "",
                 email.status or "",
                 email.assignment_confidence or "",
+                email.matched_by or "",
                 building_name or "",
                 building_address or ""
             ]).lower()
@@ -763,6 +1007,7 @@ def get_company_emails(
 def get_building_emails(db: Session, building_id: int, company_id: int):
     return (
         db.query(models.EmailMessage)
+        .options(joinedload(models.EmailMessage.building))
         .filter(
             models.EmailMessage.company_id == company_id,
             models.EmailMessage.building_id == building_id
@@ -829,6 +1074,46 @@ def update_email_status(db: Session, email_id: int, company_id: int, status: str
     return email_message
 
 
+def create_email_internal_note(
+    db: Session,
+    company_id: int,
+    email_id: int,
+    user_id: int,
+    text: str
+):
+    email_message = get_email_by_id(db, email_id, company_id)
+    if not email_message:
+        return None
+
+    note = models.EmailInternalNote(
+        company_id=company_id,
+        email_id=email_id,
+        user_id=user_id,
+        text=text
+    )
+    db.add(note)
+    db.commit()
+    db.refresh(note)
+    return note
+
+
+def get_email_internal_notes(db: Session, email_id: int, company_id: int):
+    email_message = get_email_by_id(db, email_id, company_id)
+    if not email_message:
+        return []
+
+    return (
+        db.query(models.EmailInternalNote)
+        .options(joinedload(models.EmailInternalNote.user))
+        .filter(
+            models.EmailInternalNote.company_id == company_id,
+            models.EmailInternalNote.email_id == email_id
+        )
+        .order_by(models.EmailInternalNote.created_at.desc())
+        .all()
+    )
+
+
 def get_email_counts_for_company(db: Session, company_id: int):
     emails = (
         db.query(models.EmailMessage)
@@ -843,3 +1128,57 @@ def get_email_counts_for_company(db: Session, company_id: int):
         "open": len([e for e in emails if e.status == "offen"]),
         "answered": len([e for e in emails if e.status == "beantwortet"]),
     }
+
+
+def get_recent_emails_for_company(db: Session, company_id: int, limit: int = 5):
+    return (
+        db.query(models.EmailMessage)
+        .options(joinedload(models.EmailMessage.building))
+        .filter(models.EmailMessage.company_id == company_id)
+        .order_by(models.EmailMessage.received_at.desc())
+        .limit(limit)
+        .all()
+    )
+
+
+def get_recent_activity_for_building(db: Session, building_id: int, company_id: int, limit: int = 15):
+    building = get_building_by_id(db, building_id, company_id)
+    if not building:
+        return []
+
+    activities = []
+
+    for document in building.documents:
+        activities.append({
+            "type": "document",
+            "title": "Dokument hochgeladen",
+            "description": document.title or document.original_filename,
+            "date": document.created_at
+        })
+
+    for task in building.tasks:
+        activities.append({
+            "type": "task",
+            "title": "Aufgabe erstellt" if task.status == "offen" else "Aufgabe erledigt",
+            "description": task.title,
+            "date": datetime.combine(task.due_date, datetime.min.time()) if task.due_date else datetime.utcnow()
+        })
+
+        for comment in task.comments:
+            activities.append({
+                "type": "comment",
+                "title": "Kommentar hinzugefügt",
+                "description": comment.text,
+                "date": comment.created_at
+            })
+
+    for email in building.emails:
+        activities.append({
+            "type": "email",
+            "title": "E Mail eingegangen" if email.direction == "eingehend" else "E Mail gesendet",
+            "description": email.subject or "Ohne Betreff",
+            "date": email.received_at
+        })
+
+    activities = sorted(activities, key=lambda x: x["date"], reverse=True)
+    return activities[:limit]

@@ -4,35 +4,37 @@
 <div class="page-header">
     <div>
         <h1>Einstellungen</h1>
-        <p>Verwalte dein Benutzerkonto und ändere dein Passwort.</p>
+        <p>Passwort und Darstellung verwalten</p>
     </div>
 </div>
 
-{% if error %}
-    <p class="error-text">{{ error }}</p>
-{% endif %}
-
-{% if success %}
-    <p>{{ success }}</p>
-{% endif %}
-
-<div class="detail-grid">
+<div class="detail-grid top-space">
     <div class="card glass-card">
         <div class="section-header">
-            <h2>Kontoinformationen</h2>
+            <h2>Darstellung</h2>
         </div>
 
-        <p><strong>Benutzername:</strong> {{ user.username }}</p>
-        <p><strong>E Mail:</strong> {{ user.email or 'Nicht hinterlegt' }}</p>
-        <p><strong>Rolle:</strong> {{ user.role }}</p>
-        <p><strong>Status:</strong> {{ user.status }}</p>
-        <p><strong>Firma:</strong> {{ user.company.name }}</p>
+        <label for="theme-select">Modus</label>
+        <select id="theme-select">
+            <option value="dark">Dunkel</option>
+            <option value="light">Hell</option>
+        </select>
+
+        <button type="button" class="button" onclick="saveTheme()">Darstellung speichern</button>
     </div>
 
     <div class="card glass-card">
         <div class="section-header">
             <h2>Passwort ändern</h2>
         </div>
+
+        {% if error %}
+            <p class="error-text">{{ error }}</p>
+        {% endif %}
+
+        {% if success %}
+            <p class="success-text">{{ success }}</p>
+        {% endif %}
 
         <form method="post" action="/settings/password">
             <label for="current_password">Aktuelles Passwort</label>
@@ -44,8 +46,25 @@
             <label for="new_password_repeat">Neues Passwort wiederholen</label>
             <input id="new_password_repeat" type="password" name="new_password_repeat" required>
 
-            <button type="submit" class="button">Passwort speichern</button>
+            <button type="submit" class="button">Passwort ändern</button>
         </form>
     </div>
 </div>
+
+<script>
+(function () {
+    const savedTheme = localStorage.getItem("immocontrol_theme") || "dark";
+    const select = document.getElementById("theme-select");
+    if (select) {
+        select.value = savedTheme;
+    }
+})();
+
+function saveTheme() {
+    const select = document.getElementById("theme-select");
+    const value = select.value;
+    localStorage.setItem("immocontrol_theme", value);
+    document.body.setAttribute("data-theme", value);
+}
+</script>
 {% endblock %}
